@@ -1,8 +1,8 @@
 import mysql.connector as ms
+from constants import mysqlpassword
 
 def create_and_seed_database():
-    password=""
-    temp_conn = ms.connect(host="localhost", user="root", password=password)
+    temp_conn = ms.connect(host="localhost", user="root", password=mysqlpassword)
     temp_cr = temp_conn.cursor()
 
     temp_cr.execute("create database if not exists library_db")
@@ -11,7 +11,7 @@ def create_and_seed_database():
     temp_cr.execute("create table if not exists members (member_id int primary key, member_name text, address text)")
     temp_cr.execute("create table if not exists transactions (transaction_id int primary key, book_id int, member_id int, issue_date date, return_date date, due_date date, foreign key (book_id) references books(book_id), foreign key (member_id) references members(member_id))")
     temp_cr.execute("create table if not exists fines (fine_id int primary key, transaction_id int, fine_type text, amount decimal(6,2), paid tinyint(1), foreign key (transaction_id) references transactions(transaction_id))")
-    temp_cr.execute("create table if not exists membership_payments (payment_id int primary key, member_id int, tier text, amount decimal(6,2), payment_date date, expiry_date date, foreign key (member_id) references members(member_id))")
+    temp_cr.execute("create table if not exists membership_payments (payment_id int primary key, member_id int, tier text, amount decimal(6,2), payment_date date, coverage_start date, expiry_date date, foreign key (member_id) references members(member_id))")
     temp_conn.commit()
 
     temp_cr.execute("delete from fines")
@@ -174,16 +174,16 @@ def create_and_seed_database():
     # member 6: chained history — bronze (expired), then gold (active)
     # members 7-20: no membership record (never paid)
     membership_payments = [
-        (1, 1, "bronze", 100.00, "2026-08-01", "2027-05-28"),   # active
-        (2, 2, "silver", 250.00, "2026-07-15", "2027-05-11"),   # active
-        (3, 3, "gold",   500.00, "2026-08-10", "2027-06-06"),   # active
-        (4, 4, "student", 100.00, "2026-08-20", "2027-06-16"),  # active
-        (5, 5, "bronze", 100.00, "2025-06-01", "2026-03-28"),   # expired (lapsed)
-        (6, 6, "bronze", 100.00, "2025-09-01", "2026-06-28"),   # expired leg of chain
-        (7, 6, "gold",   500.00, "2026-06-28", "2027-04-24"),   # active leg of chain (starts at prior expiry)
+        (1, 1, "bronze", 100.00, "2026-08-01", "2026-08-01", "2027-05-28"),   # active
+        (2, 2, "silver", 250.00, "2026-07-15", "2026-07-15", "2027-05-11"),   # active
+        (3, 3, "gold",   500.00, "2026-08-10", "2026-08-10", "2027-06-06"),   # active
+        (4, 4, "student", 100.00, "2026-08-20", "2026-08-20", "2027-06-16"),  # active
+        (5, 5, "bronze", 100.00, "2025-06-01", "2025-06-01", "2026-03-28"),   # expired (lapsed)
+        (6, 6, "bronze", 100.00, "2025-09-01", "2025-09-01", "2026-06-28"),   # expired leg of chain
+        (7, 6, "gold",   500.00, "2026-06-28", "2026-06-08", "2027-04-24"),   # active leg of chain (starts at prior expiry)
     ]
     temp_cr.executemany(
-        "insert into membership_payments values (%s, %s, %s, %s, %s, %s)", membership_payments
+        "insert into membership_payments values (%s, %s, %s, %s, %s, %s, %s)", membership_payments
     )
     temp_conn.commit()
 

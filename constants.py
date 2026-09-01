@@ -1,3 +1,5 @@
+mysqlpassword=""
+
 fines = {
     "late":20, 
     "damage":700

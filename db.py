@@ -1,8 +1,7 @@
 import mysql.connector as ms
-
+from constants import mysqlpassword
 def create_database():
-    password=""
-    temp_conn = ms.connect(host="localhost", user="root", password=password)
+    temp_conn = ms.connect(host="localhost", user="root", password=mysqlpassword)
     temp_cr = temp_conn.cursor()
 
     temp_cr.execute("create database if not exists library_db")
@@ -18,7 +17,7 @@ def create_database():
     temp_conn.close()
 create_database()
 
-connect=ms.connect(host="localhost", user="root", password="mysql", database="library_db")
+connect=ms.connect(host="localhost", user="root", password=mysqlpassword, database="library_db")
 cr=connect.cursor()
 
 primkeys = {

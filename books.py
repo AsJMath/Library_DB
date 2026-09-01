@@ -32,7 +32,7 @@ def add_books():
     connect.commit()
     print("New book added.")
 
-def search_books():
+def generic_search():
     while True:
         method=input("""
 1. Title/Author
@@ -50,34 +50,8 @@ Enter the method of search: """)
             print("Enter either 1 or 2.")
 
     if method==1:
-        query=input("Enter the book title or author: ")
+        query_books_by_name()
 
-        if len(query) < 5:
-            print("Please enter at least 5 characters to search.")
-            return
-
-        cr.execute("select book_id, book_name, author_name from books")
-        all_books=cr.fetchall()
-
-        choices={}
-        for record in all_books:
-            key=f"{record[1]} {record[2]}" # key is the string of book name + author name, which is what the rapidfuzz algorithm searches for
-            choices[key]=record
-            # each key that the rapidfuzz algorithm searches for (a string) is linked to the actual data from the database, the book (book_name) and its details (book_id and author_name)
-        matches=process.extract(query, choices.keys(), limit=5, score_cutoff=60, scorer=fuzz.partial_ratio)
-        # .extract(<the string to be searched for, <what to search in>, <how many results to show>, <requires a minimum match of how much %>)
-        # scorer=fuzz.partial_ratio finds the best matching substring within each key, rather than comparing the full strings —
-
-        # matches is a list of tuples, with each tuple of the format (<key from choices>, <likelihood of a match out of 100>, <index in the choices dictionary>)
-        print()
-        if not matches:
-            print("No matching books found.")
-        else:
-            print(f"Search results for '{query}':")
-            for match_str, score, index in matches:
-                record=choices[match_str] # finding the value from the choices dictionary for book_id, book_name and author_name
-                print(f"book id: {record[0]} | {record[1]} | {record[2]}")
-    
     elif method==2:
         query=input("Enter the genre: ")
 
@@ -102,3 +76,33 @@ Enter the method of search: """)
             print(f"Books in genre: {matched_genre}")
             for record in result:
                 print(f"book id: {record[0]} | {record[1]} | {record[2]} | published: {record[3]}")
+
+def query_books_by_name():
+    query=input("Enter the book title or author: ")
+
+    if len(query) < 5:
+        print("Please enter at least 5 characters to search.")
+        return
+
+    cr.execute("select book_id, book_name, author_name from books")
+    all_books=cr.fetchall()
+
+    choices={}
+    for record in all_books:
+        key=f"{record[1]} {record[2]}" # key is the string of book name + author name, which is what the rapidfuzz algorithm searches for
+        choices[key]=record
+        # each key that the rapidfuzz algorithm searches for (a string) is linked to the actual data from the database, the book (book_name) and its details (book_id and author_name)
+    matches=process.extract(query, choices.keys(), limit=5, score_cutoff=60, scorer=fuzz.partial_ratio)
+    # .extract(<the string to be searched for, <what to search in>, <how many results to show>, <requires a minimum match of how much %>)
+    # scorer=fuzz.partial_ratio finds the best matching substring within each key, rather than comparing the full strings —
+
+    # matches is a list of tuples, with each tuple of the format (<key from choices>, <likelihood of a match out of 100>, <index in the choices dictionary>)
+    print()
+    if not matches:
+        print("No matching books found.")
+    else:
+        print(f"Search results for '{query}':")
+        for match_str, score, index in matches:
+            record=choices[match_str] # finding the value from the choices dictionary for book_id, book_name and author_name
+            print(f"book id: {record[0]} | {record[1]} | {record[2]}")
+

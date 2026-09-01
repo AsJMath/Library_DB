@@ -1,7 +1,7 @@
 from db import connect, cr #, next_id
 # import db automatically runs the db file and create database is called
 
-from books import add_books, currentBorrower, search_books #, is_available
+from books import add_books, currentBorrower, generic_search, query_books_by_name #, is_available
 from members import add_members, active_members, is_active_member, pay_membership #, no_of_books_issued_to
 # from dates import is_late, add_date
 from constants import intro_message #, fines, loan_period, max_books, tier_prices, membership_duration
@@ -67,7 +67,7 @@ $ Information
         pay_membership()
 
     elif choice==7:
-        search_books()
+        generic_search()
         
     elif choice==8:
         book_id=int(input("Enter the book id: "))

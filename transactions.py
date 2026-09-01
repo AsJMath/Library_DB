@@ -1,5 +1,5 @@
 from db import connect, cr, next_id
-from books import is_available
+from books import is_available, query_books_by_name
 from members import is_active_member, no_of_books_issued_to
 from dates import is_late, add_date
 from constants import max_books, loan_period, fines
@@ -7,7 +7,11 @@ from constants import max_books, loan_period, fines
 def issue_book():
     transaction_id=next_id("transactions")
     while True:
-        book_id = int(input("Enter the book id: "))
+        query_books_by_name()
+        print()
+        book_id = int(input("Enter the book id to issue or enter 0 to seach again: "))
+        if book_id==0:
+            continue
         if is_available(book_id):
             # book is available i.e. is in the library and can be issued (thus proceed)
             break
