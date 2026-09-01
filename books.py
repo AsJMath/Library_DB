@@ -1,6 +1,9 @@
+# FILES
 from db import connect, cr, next_id
-from rapidfuzz import process, fuzz
 from constants import cellstyle
+
+# MODULES
+from rapidfuzz import process, fuzz
 from tabulate import tabulate
 
 def is_available(book_id):
