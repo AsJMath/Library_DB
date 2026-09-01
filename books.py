@@ -1,5 +1,7 @@
 from db import connect, cr, next_id
 from rapidfuzz import process, fuzz
+from constants import cellstyle
+from tabulate import tabulate
 
 def is_available(book_id):
     # all books out of library and not available
@@ -72,11 +74,10 @@ Enter the method of search: """)
             matched_genre=best_match[0]
             cr.execute("select book_id, book_name, author_name, publication_date from books where genre=%s", (matched_genre, ))
             result=cr.fetchall()
-
+            headers=["Book ID", "Book Name", "Author Name", "Publication Date"]
             print(f"Books in genre: {matched_genre}")
-            for record in result:
-                print(f"book id: {record[0]} | {record[1]} | {record[2]} | published: {record[3]}")
-
+            print(tabulate(result, headers=headers, tablefmt=cellstyle))
+            
 def query_books_by_name():
     query=input("Enter the book title or author: ")
 
@@ -101,8 +102,9 @@ def query_books_by_name():
     if not matches:
         print("No matching books found.")
     else:
-        print(f"Search results for '{query}':")
+        record=[]
         for match_str, score, index in matches:
-            record=choices[match_str] # finding the value from the choices dictionary for book_id, book_name and author_name
-            print(f"book id: {record[0]} | {record[1]} | {record[2]}")
+            record.append(choices[match_str])
+
+        print(tabulate(record, headers=["Book ID", "Book Name", "Author Name"]))
 

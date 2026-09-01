@@ -1,7 +1,10 @@
+# FILES
 from db import cr  # , connect, next_id
+from members import is_active_member
+
+# MODULES
 import matplotlib.pyplot as plt
 import textwrap
-from members import is_active_member
 
 def pie_chart(fractions_sequence, label_sequence, color_list=None, title=None):
     plt.pie(fractions_sequence, labels=label_sequence, autopct='%1.1f%%', startangle=90, pctdistance=0.85, labeldistance=1.1, colors=color_list)

@@ -1,5 +1,7 @@
 mysqlpassword=""
 
+cellstyle="simple"
+
 fines = {
     "late":20, 
     "damage":700

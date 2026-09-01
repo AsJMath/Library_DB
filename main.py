@@ -1,12 +1,15 @@
+# FILES
 from db import connect, cr #, next_id
 # import db automatically runs the db file and create database is called
-
 from books import add_books, currentBorrower, generic_search, query_books_by_name #, is_available
 from members import add_members, active_members, is_active_member, pay_membership #, no_of_books_issued_to
-# from dates import is_late, add_date
-from constants import intro_message #, fines, loan_period, max_books, tier_prices, membership_duration
+from constants import intro_message, cellstyle #, fines, loan_period, max_books, tier_prices, membership_duration
 from transactions import issue_book, settle_fines, return_book
 from graphing import top_ten_books, top_ten_members, membership_chart, genre_chart
+# from dates import is_late, add_date
+
+# MODULES
+from tabulate import tabulate
 
 print(intro_message)
 run=True
@@ -91,9 +94,10 @@ Member name: {result[1]}
         # transaction history
         cr.execute("select transaction_id, members.member_id, member_name, issue_date, return_date from transactions, members where members.member_id=transactions.member_id and book_id=%s order by issue_date", (book_id,))
         transaction_history=cr.fetchall()
+        headers=["Transaction ID", "Member Id", "Member Name", "Issue Date", "Return Date"]
+
         print("Transaction History:")
-        for record in transaction_history: # row is a tuple and str(item) for each item in that tuple automatically converts NULL to None and datetime objects to readable strings
-            print(f"transaction id: {record[0]} | member id: {record[1]} | {record[2]} | loan period: {record[3]} -> {record[4]}")
+        print(tabulate(transaction_history, headers=headers, tablefmt=cellstyle))
 
     elif choice==9:
         member_id=int(input("Enter the member id: "))
@@ -109,17 +113,16 @@ Member name: {result[1]}
         print("Transaction History: ")
         cr.execute("select transaction_id, books.book_id, book_name, issue_date, return_date from transactions, books where books.book_id=transactions.book_id and member_id=%s order by issue_date", (member_id, ))
         transaction_history=cr.fetchall()
-        for record in transaction_history: # row is a tuple and str(item) for each item in that tuple automatically converts NULL to None and datetime objects to readable strings
-            print(f"transaction id: {record[0]} | book id: {record[1]} | {record[2]} | loan period: {record[3]} -> {record[4]}")
+        headers=["Transaction ID", "Book ID", "Book Name", "Issue Date", "Return Date"]
+        print(tabulate(transaction_history, headers=headers, tablefmt=cellstyle))
         
         print()
 
         print("Membership History: ")
         cr.execute("select payment_id, tier, payment_date, coverage_start, expiry_date from membership_payments where member_id=%s", (member_id, ))
         membership_history=cr.fetchall()
-
-        for record in membership_history:
-            print(f"payment id: {record[0]} | {record[1]} | paid on: {record[2]} | validity: {record[3]} -> {record[4]}")
+        headers=["Payment ID", "Tier", "Payment Date", "Coverage Start", "Expiry Date"]
+        print(tabulate(membership_history, headers=headers, tablefmt=cellstyle))
     
     elif choice==10:
         active_membership_info = active_members() # returns list of all (member_id, tier, expiry_date)
@@ -127,53 +130,63 @@ Member name: {result[1]}
         if not active_membership_info:
             print("No members currently have an active membership.")
         else:
-            print("Active members:")
+            rows = []
             for member_id, tier, expiry_date in active_membership_info:
                 cr.execute("select member_name from members where member_id=%s", (member_id,))
                 member_name = cr.fetchone()[0]
-                print(f"member id: {member_id} | {member_name} | {tier} | expires: {expiry_date}")
+                rows.append([member_id, member_name, tier, expiry_date])
                 active_member_ids.append(member_id)
-        
+
+            headers = ["Member ID", "Member Name", "Tier", "Membership Expiry Date"]
+            print("Active members:")
+            print(tabulate(rows, headers=headers, tablefmt="grid"))
+
         cr.execute("select member_id, member_name from members")
         all_members=cr.fetchall()
-        
-        print("Members without membership:")
+        inactive_members=[]
         for member_id, member_name in all_members:
             if member_id not in active_member_ids: # member doesn't have a membership
-                print(f"member id: {member_id} | {member_name}")
-        
+                inactive_members.append([member_id, member_name])
+
+        print("Members without membership:")
+        if inactive_members:
+            print(tabulate(inactive_members, headers=["Member ID", "Member Name"], tablefmt=cellstyle))
+        else:
+            print("All members have an active membership.")
+
     elif choice==11:
         cr.execute("select fine_id, member_name, book_name, fine_type, amount from fines, transactions, members, books where paid=0 and members.member_id=transactions.member_id and transactions.transaction_id=fines.transaction_id and transactions.book_id=books.book_id")
         pending_fines=cr.fetchall()
-
+        headers=["Fine ID", "Member Name", "Book Name", "Fine Type", "Amount (Rs.)"]
         if not pending_fines:
             print("No fines are currently pending.")
         else:
             print("Pending fines:")
-            for fine in pending_fines:
-                print(f"fine id: {fine[0]} | {fine[1]} | {fine[2]} | {fine[3]} | Rs.{fine[4]}")
+            print(tabulate(pending_fines, headers=headers, tablefmt=cellstyle))
 
     elif choice==12:
         cr.execute("select transaction_id, book_name, member_name, issue_date, due_date from books, members, transactions where return_date is null and transactions.book_id=books.book_id and transactions.member_id=members.member_id")
         issued_books=cr.fetchall()
-
+        headers=["Transaction ID", "Book Name", "Member Name", "Issue Date", "Due Date"]
         if not issued_books:
             print("No books are currently issued.")
         else:
             print("Issued books:")
-            for book in issued_books:
-                print(f"transaction id: {book[0]} | {book[1]} | {book[2]} | loan period: {book[3]} -> {book[4]}")
-
+            print(tabulate(issued_books, headers=headers, tablefmt=cellstyle))
+            
     elif choice==13:
         cr.execute("select transaction_id, book_name, member_name, due_date from books, members, transactions where return_date is null and due_date < curdate() and transactions.member_id=members.member_id and transactions.book_id=books.book_id")
         overdue_books=cr.fetchall()
 
+        cr.execute("select curdate()")
+        print("Today:", cr.fetchone()[0].strftime("%Y-%m-%d"))
+
+        headers=["Transaction ID", "Book Name", "Member Name", "Due Date"]
         if not overdue_books:
             print("No books are currently overdue.")
         else:
             print("Overdue books:")
-            for book in overdue_books:
-                print(f"transaction id: {book[0]} | {book[1]} | {book[2]} | due date: {book[3]}")
+            print(tabulate(overdue_books, headers=headers, tablefmt=cellstyle))
 
     elif choice==14:
         top_ten_books()

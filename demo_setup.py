@@ -1,5 +1,8 @@
-import mysql.connector as ms
+# FILES
 from constants import mysqlpassword
+
+# MODULES
+import mysql.connector as ms
 
 def create_and_seed_database():
     temp_conn = ms.connect(host="localhost", user="root", password=mysqlpassword)

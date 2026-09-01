@@ -1,5 +1,9 @@
-import mysql.connector as ms
+# FILES
 from constants import mysqlpassword
+
+# MODULES
+import mysql.connector as ms
+
 def create_database():
     temp_conn = ms.connect(host="localhost", user="root", password=mysqlpassword)
     temp_cr = temp_conn.cursor()

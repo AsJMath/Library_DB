@@ -1,5 +1,6 @@
+# FILES
 from db import connect, cr, next_id
-from constants import tier_prices, membership_duration
+from constants import tier_prices, membership_duration, cellstyle
 from dates import add_date
 
 def add_members():

@@ -1,8 +1,12 @@
+# FILES
 from db import connect, cr, next_id
 from books import is_available, query_books_by_name
 from members import is_active_member, no_of_books_issued_to
 from dates import is_late, add_date
-from constants import max_books, loan_period, fines
+from constants import max_books, loan_period, fines, cellstyle
+
+# MODULES
+from tabulate import tabulate
 
 def issue_book():
     transaction_id=next_id("transactions")
@@ -107,10 +111,10 @@ def settle_fines():
     if not pending_fines:
         print("This member has no pending fines.")
         return
-    
+
+    headers=["Fine ID", "Fine Type", "Amount", "Book Name", "Return Date"]
     print("Pending fines:")
-    for fine in pending_fines:
-        print(f"fine id: {fine[0]} | {fine[1]} | Rs.{fine[2]} | {fine[3]}")
+    print(tabulate(pending_fines, headers=headers, tablefmt=cellstyle))
 
     fine_id = int(input("Enter the fine id for the fine you want to settle or press 0 for settling all fines: "))
 
