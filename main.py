@@ -31,10 +31,10 @@ $ Information
 13. Overdue Books - List all books overdue
 14. Top 10 Books - Top 10 list of most issued books
 15. Top 10 Members - Top 10 list of members who issue books most
-16. Membership Split - See a pie chart of what memberships members have
-17. Genre Diagram - See a pie chart of the genre's available
-18. Custom Query - Enter your own custom SELECT query
-          
+16. Membership Chart - See a pie chart of what memberships members have
+17. Genre Chart - See a pie chart of the genre's available
+
+18. Custom Query - Enter your own custom SELECT query          
 19. See Database Schema                  
 20. Exit
 """)
@@ -199,8 +199,8 @@ Member name: {result[1]}
                         formatted_values.append(str(item))
                     line=" | ".join(formatted_values)
                     print(line)
-            except Exception:
-                print(Exception)
+            except Exception as e:
+                print(e)
         else:
             print("Only SELECT statements are allowed for safety.")
 

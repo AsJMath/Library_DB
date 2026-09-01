@@ -69,7 +69,7 @@ Enter the method of search: """)
         # scorer=fuzz.partial_ratio finds the best matching substring within each key, rather than comparing the full strings —
 
         # matches is a list of tuples, with each tuple of the format (<key from choices>, <likelihood of a match out of 100>, <index in the choices dictionary>)
-
+        print()
         if not matches:
             print("No matching books found.")
         else:
@@ -91,6 +91,7 @@ Enter the method of search: """)
         # .extractOne returns a tuple whose first element is a string from the all_genres iterable that matches closest to query within the cutoff of 60%
         # .extractOne returns a single tuple in the format (<string>, <likelihood out of 100>, <index in the all_genres iterable>)
 
+        print()
         if best_match is None:
             print("No matching genre found.")
         else:

@@ -1,7 +1,8 @@
 import mysql.connector as ms
 
 def create_and_seed_database():
-    temp_conn = ms.connect(host="localhost", user="root", password="mysql")
+    password=""
+    temp_conn = ms.connect(host="localhost", user="root", password=password)
     temp_cr = temp_conn.cursor()
 
     temp_cr.execute("create database if not exists library_db")

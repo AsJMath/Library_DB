@@ -21,7 +21,9 @@ This is a command-line program you run in a terminal. It lets a librarian:
 
 ### Getting Started
 
-1. Make sure MySQL is running locally with a `root` user (password `mysql` — set in `db.py`).
+1. Make sure MySQL is running locally with a `root` user. This project assumes the `root` user has **no password** set. If your MySQL root user has a password, either:
+   - Remove it by running this in the `mysql` CLI: `ALTER USER 'root'@'localhost' IDENTIFIED BY ''; FLUSH PRIVILEGES;`, or
+   - Open `db.py` and replace the empty string in `password=""` with your own password
 2. Run `main.py`. On first run, it automatically creates the `library_db` database and all required tables if they don't already exist.
 3. You'll see a welcome banner, then a numbered menu. Type a number and press Enter to choose an action.
 

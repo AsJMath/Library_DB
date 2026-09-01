@@ -43,7 +43,7 @@ def return_book():
             #book is not available i.e. it is out of the library and thus can be returned (thus proceed)
             break
         else:
-            print("This book is in of the library.")
+            print("This book is in  the library.")
             # Book is in the library, thus it cannot be returned, enter a book that is not in the library
 
     cr.execute("select due_date, transaction_id, issue_date from transactions where return_date is null and book_id=%s", (book_id,))
@@ -54,7 +54,8 @@ def return_book():
 
     while True:
         return_date=input("Enter the return date (YYYY-MM-DD): ")
-        if is_late(issue_date, return_date):
+        if is_late(return_date, issue_date):
+            # returns a non zero value if issue date is after the return date
             print(f"Return date ({return_date}) cannot be before the issue date ({issue_date}). Try again.")
         else:
             break
@@ -100,7 +101,7 @@ def settle_fines():
     pending_fines=cr.fetchall()
 
     if not pending_fines:
-        "This member has no pending fines."
+        print("This member has no pending fines.")
         return
     
     print("Pending fines:")
