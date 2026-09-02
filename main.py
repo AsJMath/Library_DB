@@ -258,4 +258,5 @@ TO DO:
 2. Query to list books due today
 3. Comment out custom options and database schema
 4. Add credits option
+5. Update README.md
 """
