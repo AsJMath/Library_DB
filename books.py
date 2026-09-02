@@ -6,6 +6,7 @@ from constants import cellstyle
 from rapidfuzz import process, fuzz
 from tabulate import tabulate
 
+# For a given book id, checks if the book is within the library and is available for borrowing
 def is_available(book_id):
     # all books out of library and not available
     cr.execute("select * from transactions where return_date is null")
@@ -16,7 +17,9 @@ def is_available(book_id):
             return False
     return True
 
+# Identifies the current borrower of a book
 def currentBorrower(book_id):
+    # Checks that the book is actually in somebody's hands and not in the library
     if not is_available(book_id):
         cr.execute("select members.member_id, member_name, book_id from members, transactions where members.member_id=transactions.member_id and return_date is null and book_id=%s", (book_id,))
         member_details=cr.fetchone()
@@ -26,6 +29,7 @@ def currentBorrower(book_id):
         print("Book is in the library.")
         return None
 
+# Adding new books into the library catalog
 def add_books():
     book_id=next_id("books")
     book_name=input("Enter the book name: ")
@@ -37,6 +41,7 @@ def add_books():
     connect.commit()
     print("New book added.")
 
+# Generic Search using rapidfuzz module
 def generic_search():
     while True:
         method=input("""

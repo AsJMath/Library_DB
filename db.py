@@ -4,6 +4,7 @@ from constants import mysqlpassword
 # MODULES
 import mysql.connector as ms
 
+# Sets up the database and the empty tables with correct names and fields of correct datatypes to begin library operations
 def create_database():
     temp_conn = ms.connect(host="localhost", user="root", password=mysqlpassword)
     temp_cr = temp_conn.cursor()
@@ -19,11 +20,14 @@ def create_database():
     temp_conn.commit()
     temp_cr.close()
     temp_conn.close()
+
+# create_database() is called explicitly because when db.py is imported in main.py (like all imports), the file being imported is executed. None of the other files perform any visible actions when imported because their functions are not being called within the file, only externally.
 create_database()
 
 connect=ms.connect(host="localhost", user="root", password=mysqlpassword, database="library_db")
 cr=connect.cursor()
 
+# Static dictionary of all the primary keys for use in the next_id function
 primkeys = {
     "books": "book_id",
     "members": "member_id",
@@ -32,7 +36,7 @@ primkeys = {
     "membership_payments": "payment_id"
 }
 
-
+# Automatically creates the next primary key [the python alternative for autoincrement from SQL]
 def next_id(table_name):
     primkey = primkeys[table_name]
     cr.execute(f"select max({primkey}) from {table_name}")

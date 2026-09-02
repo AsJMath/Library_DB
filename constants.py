@@ -1,6 +1,6 @@
 mysqlpassword=""
 
-cellstyle="simple"
+cellstyle=["simple", "github", "grid", "fancy_grid", "pipe", "orgtbl"][3]
 
 fines = {
     "late":20, 

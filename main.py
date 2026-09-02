@@ -42,12 +42,13 @@ $ Information
 20. Exit
 """)
     choice=input("Enter the number: ")
+
+    # Handles stray values that are not integers or that are not within the valid ranges
     try:
         choice=int(choice)
     except ValueError:
         print("Try Again!")
-        continue
-
+        continue # forces the next iteration of the loop
     if choice not in range(1,21):
         print("Try again!")
 
@@ -71,7 +72,8 @@ $ Information
 
     elif choice==7:
         generic_search()
-        
+
+    # Book Info    
     elif choice==8:
         book_id=int(input("Enter the book id: "))
         # name
@@ -99,6 +101,7 @@ Member name: {result[1]}
         print("Transaction History:")
         print(tabulate(transaction_history, headers=headers, tablefmt=cellstyle))
 
+    # Member Info
     elif choice==9:
         member_id=int(input("Enter the member id: "))
 
@@ -123,7 +126,8 @@ Member name: {result[1]}
         membership_history=cr.fetchall()
         headers=["Payment ID", "Tier", "Payment Date", "Coverage Start", "Expiry Date"]
         print(tabulate(membership_history, headers=headers, tablefmt=cellstyle))
-    
+
+    # Membership Info
     elif choice==10:
         active_membership_info = active_members() # returns list of all (member_id, tier, expiry_date)
         active_member_ids=[]
@@ -154,7 +158,9 @@ Member name: {result[1]}
         else:
             print("All members have an active membership.")
 
+    # Pending Fines
     elif choice==11:
+        # condition paid=0 indicates unpaid fines
         cr.execute("select fine_id, member_name, book_name, fine_type, amount from fines, transactions, members, books where paid=0 and members.member_id=transactions.member_id and transactions.transaction_id=fines.transaction_id and transactions.book_id=books.book_id")
         pending_fines=cr.fetchall()
         headers=["Fine ID", "Member Name", "Book Name", "Fine Type", "Amount (Rs.)"]
@@ -164,6 +170,7 @@ Member name: {result[1]}
             print("Pending fines:")
             print(tabulate(pending_fines, headers=headers, tablefmt=cellstyle))
 
+    # Issued Books
     elif choice==12:
         cr.execute("select transaction_id, book_name, member_name, issue_date, due_date from books, members, transactions where return_date is null and transactions.book_id=books.book_id and transactions.member_id=members.member_id")
         issued_books=cr.fetchall()
@@ -173,7 +180,8 @@ Member name: {result[1]}
         else:
             print("Issued books:")
             print(tabulate(issued_books, headers=headers, tablefmt=cellstyle))
-            
+
+    # Overdue Books
     elif choice==13:
         cr.execute("select transaction_id, book_name, member_name, due_date from books, members, transactions where return_date is null and due_date < curdate() and transactions.member_id=members.member_id and transactions.book_id=books.book_id")
         overdue_books=cr.fetchall()
@@ -200,6 +208,7 @@ Member name: {result[1]}
     elif choice==17:
         genre_chart()
 
+    # Custom Query (depreciate)
     elif choice==18:
         query=input("Enter your custom SELECT query: ")
         if query.strip().lower().startswith("select"):
@@ -217,6 +226,7 @@ Member name: {result[1]}
         else:
             print("Only SELECT statements are allowed for safety.")
 
+    # Database Schema (depreciate)
     elif choice==19:
         cr.execute("show tables")
         tables = cr.fetchall()
@@ -230,12 +240,22 @@ Member name: {result[1]}
             for col in columns:
                 print(f" {col[0]} ({col[1]})")
 
+    # Exits program closes the cursor, connection and breaks the loop
     elif choice==20:
         print("Exiting program...")
         cr.close()
         connect.close()
         run=False
         break
-    
+
+    # A break before the loop continues to ensure readability in the CLI 
     if choice != 20:
         input("\nPress Enter to continue...")
+
+"""
+TO DO:
+1. Remove membership pie chart from seperate menu options and change to y/n would you like to see pie chart from within membership info menu
+2. Query to list books due today
+3. Comment out custom options and database schema
+4. Add credits option
+"""
