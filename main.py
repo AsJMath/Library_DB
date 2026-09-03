@@ -251,12 +251,3 @@ Member name: {result[1]}
     # A break before the loop continues to ensure readability in the CLI 
     if choice != 20:
         input("\nPress Enter to continue...")
-
-"""
-TO DO:
-1. Remove membership pie chart from seperate menu options and change to y/n would you like to see pie chart from within membership info menu
-2. Query to list books due today
-3. Comment out custom options and database schema
-4. Add credits option
-5. Update README.md
-"""
