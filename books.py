@@ -63,29 +63,8 @@ Enter the method of search: """)
         query_books_by_name()
 
     elif method==2:
-        query=input("Enter the genre: ")
-
-        cr.execute("select distinct genre from books")
-        genre_rows=cr.fetchall()
-        all_genres=[]
-        for row in genre_rows:
-            all_genres.append(row[0])
-        
-        best_match=process.extractOne(query, all_genres, score_cutoff=60)
-        # .extractOne returns a tuple whose first element is a string from the all_genres iterable that matches closest to query within the cutoff of 60%
-        # .extractOne returns a single tuple in the format (<string>, <likelihood out of 100>, <index in the all_genres iterable>)
-
-        print()
-        if best_match is None:
-            print("No matching genre found.")
-        else:
-            matched_genre=best_match[0]
-            cr.execute("select book_id, book_name, author_name, publication_date from books where genre=%s", (matched_genre, ))
-            result=cr.fetchall()
-            headers=["Book ID", "Book Name", "Author Name", "Publication Date"]
-            print(f"Books in genre: {matched_genre}")
-            print(tabulate(result, headers=headers, tablefmt=cellstyle))
-            
+        query_books_by_genre()
+                    
 def query_books_by_name():
     query=input("Enter the book title or author: ")
 
@@ -116,3 +95,27 @@ def query_books_by_name():
 
         print(tabulate(record, headers=["Book ID", "Book Name", "Author Name"]))
 
+def query_books_by_genre():
+    query=input("Enter the genre: ")
+
+    cr.execute("select distinct genre from books")
+    genre_rows=cr.fetchall()
+    all_genres=[]
+    for row in genre_rows:
+        all_genres.append(row[0])
+    
+    best_match=process.extractOne(query, all_genres, score_cutoff=60)
+    # .extractOne returns a tuple whose first element is a string from the all_genres iterable that matches closest to query within the cutoff of 60%
+    # .extractOne returns a single tuple in the format (<string>, <likelihood out of 100>, <index in the all_genres iterable>)
+
+    print()
+    if best_match is None:
+        print("No matching genre found.")
+    else:
+        matched_genre=best_match[0]
+        cr.execute("select book_id, book_name, author_name, publication_date from books where genre=%s", (matched_genre, ))
+        result=cr.fetchall()
+        headers=["Book ID", "Book Name", "Author Name", "Publication Date"]
+        print(f"Books in genre: {matched_genre}")
+        print(tabulate(result, headers=headers, tablefmt=cellstyle))
+        return matched_genre

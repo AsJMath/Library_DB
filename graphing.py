@@ -6,8 +6,8 @@ from members import is_active_member
 import matplotlib.pyplot as plt
 import textwrap
 
-def pie_chart(fractions_sequence, label_sequence, color_list=None, title=None):
-    plt.pie(fractions_sequence, labels=label_sequence, autopct='%1.1f%%', startangle=90, pctdistance=0.85, labeldistance=1.1, colors=color_list)
+def pie_chart(fractions_sequence, label_sequence, color_list=None, title=None, explode_sequence=None):
+    plt.pie(fractions_sequence, labels=label_sequence, autopct='%1.1f%%', startangle=90, pctdistance=0.85, labeldistance=1.1, colors=color_list, explode=explode_sequence)
     plt.title(title)
     plt.tight_layout()
     plt.show()
@@ -90,20 +90,49 @@ def membership_chart():
         tiers.append(key.capitalize())
     pie_chart(divisions, tiers, color_list=["#CD7F32", "#C4C4C4", "#D4AF37", "#84A1DB", "#DE1818A4"], title="Membership Chart")
 
-def genre_chart():
+# Generates a particular piechart with the parameter target_genre exploded
+# Default value none allows for 
+def genre_chart(target_genre=None):
     cr.execute("select distinct genre from books")
     result=cr.fetchall()
     all_genres=dict()
     for row in result:
         genre=row[0]
+        # Initially sets the number of the genres to zero
         all_genres[genre]=0
+
+    # List of all the genres, the labels next to the pie chart
+    genres=list(all_genres.keys())
+
+    explode_list=[]
+    for genre in genres:
+        if genre == target_genre:
+            explode_list.append(0.2)
+        else:
+            explode_list.append(0)
 
     cr.execute("select book_id, genre from books")
     result=cr.fetchall()
 
     for record in result:
         all_genres[record[1]]+=1
+    # all_genres is a dictionary of format {<genre>:<count>}
 
+    # Sequence of all the ratios of books in terms of their count
     divisions=all_genres.values()
-    genres=all_genres.keys()
-    pie_chart(divisions, genres, title="Genre Chart")
+    pie_chart(divisions, genres, title="Genre Chart", explode_sequence=explode_list)
+
+def revenue_source_chart():
+    revenue_sources={
+        "fines": 0,
+        "membership": 0
+    }
+
+    cr.execute("select sum(amount) from fines")
+    revenue_sources["fines"]=float(cr.fetchone()[0])
+
+    cr.execute("select sum(amount) from membership_payments")
+    revenue_sources["membership"]=float(cr.fetchone()[0])
+    # cr.fetchone() returns a nested tuple with one element, the sum of the amount
+
+    pie_chart(label_sequence=revenue_sources.keys(), fractions_sequence=revenue_sources.values(), title="Revenue Chart")

@@ -1,11 +1,11 @@
 # FILES
 from db import connect, cr #, next_id
 # import db automatically runs the db file and create database is called
-from books import add_books, currentBorrower, generic_search, query_books_by_name #, is_available
+from books import add_books, currentBorrower, query_books_by_genre, query_books_by_name #, is_available
 from members import add_members, active_members, is_active_member, pay_membership #, no_of_books_issued_to
 from constants import intro_message, cellstyle #, fines, loan_period, max_books, tier_prices, membership_duration
 from transactions import issue_book, settle_fines, return_book
-from graphing import top_ten_books, top_ten_members, membership_chart, genre_chart
+from graphing import top_ten_books, top_ten_members, membership_chart, genre_chart, revenue_source_chart
 # from dates import is_late, add_date
 
 # MODULES
@@ -36,10 +36,11 @@ $ Information
 15. Top 10 Members - Top 10 list of members who issue books most
 16. Membership Chart - See a pie chart of what memberships members have
 17. Genre Chart - See a pie chart of the genre's available
+18. Revenue Source Chart - See a pie chart of the revenue the library generates from each source
 
-18. Custom Query - Enter your own custom SELECT query          
-19. See Database Schema                  
-20. Exit
+19. Custom Query - Enter your own custom SELECT query          
+20. See Database Schema                  
+21. Exit
 """)
     choice=input("Enter the number: ")
 
@@ -71,7 +72,30 @@ $ Information
         pay_membership()
 
     elif choice==7:
-        generic_search()
+        while True:
+            method=input("""
+    1. Title/Author
+    2. Genre
+    Enter the method of search: """)
+            try:
+                method=int(method)
+            except ValueError:
+                print("Enter either 1 or 2.")
+                continue
+
+            if method in range(1,3):
+                break
+            else:
+                print("Enter either 1 or 2.")
+
+        if method==1:
+            query_books_by_name()
+
+        elif method==2:
+            target_genre=query_books_by_genre()
+            show_chart=input("Would you like to see a piechart of the book genres (y/n): ").lower()
+            if show_chart.startswith("y"):
+                genre_chart(target_genre)
 
     # Book Info    
     elif choice==8:
@@ -158,6 +182,10 @@ Member name: {result[1]}
         else:
             print("All members have an active membership.")
 
+        chart_choice=input("Would you like to see a pie chart of the memberships (y/n): ").lower()
+        if chart_choice.startswith("y"):
+            membership_chart()
+
     # Pending Fines
     elif choice==11:
         # condition paid=0 indicates unpaid fines
@@ -208,8 +236,11 @@ Member name: {result[1]}
     elif choice==17:
         genre_chart()
 
-    # Custom Query (depreciate)
     elif choice==18:
+        revenue_source_chart()
+
+    # Custom Query (depreciate)
+    elif choice==19:
         query=input("Enter your custom SELECT query: ")
         if query.strip().lower().startswith("select"):
             try:
@@ -227,7 +258,7 @@ Member name: {result[1]}
             print("Only SELECT statements are allowed for safety.")
 
     # Database Schema (depreciate)
-    elif choice==19:
+    elif choice==20:
         cr.execute("show tables")
         tables = cr.fetchall()
                 
@@ -241,7 +272,7 @@ Member name: {result[1]}
                 print(f" {col[0]} ({col[1]})")
 
     # Exits program closes the cursor, connection and breaks the loop
-    elif choice==20:
+    elif choice==21:
         print("Exiting program...")
         cr.close()
         connect.close()
@@ -249,5 +280,5 @@ Member name: {result[1]}
         break
 
     # A break before the loop continues to ensure readability in the CLI 
-    if choice != 20:
+    if choice != 21:
         input("\nPress Enter to continue...")
