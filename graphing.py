@@ -91,7 +91,7 @@ def membership_chart():
     pie_chart(divisions, tiers, color_list=["#CD7F32", "#C4C4C4", "#D4AF37", "#84A1DB", "#DE1818A4"], title="Membership Chart")
 
 # Generates a particular piechart with the parameter target_genre exploded
-# Default value none allows for 
+# Default value none allows for situation where no genre is generated
 def genre_chart(target_genre=None):
     cr.execute("select distinct genre from books")
     result=cr.fetchall()

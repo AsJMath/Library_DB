@@ -74,9 +74,9 @@ $ Information
     elif choice==7:
         while True:
             method=input("""
-    1. Title/Author
-    2. Genre
-    Enter the method of search: """)
+1. Title/Author
+2. Genre
+Enter the method of search: """)
             try:
                 method=int(method)
             except ValueError:
@@ -92,7 +92,7 @@ $ Information
             query_books_by_name()
 
         elif method==2:
-            target_genre=query_books_by_genre()
+            target_genre=query_books_by_genre() # query_books_by_genre function gets executed and the return value gets stored in the target_genre
             show_chart=input("Would you like to see a piechart of the book genres (y/n): ").lower()
             if show_chart.startswith("y"):
                 genre_chart(target_genre)
