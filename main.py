@@ -1,7 +1,7 @@
 # FILES
 from db import connect, cr #, next_id
 # import db automatically runs the db file and create database is called
-from books import add_books, currentBorrower, query_books_by_genre, query_books_by_name #, is_available
+from books import add_books, delete_book, current_borrower, query_books_by_genre, query_books_by_name, book_exists #, is_available
 from members import add_members, active_members, is_active_member, pay_membership #, no_of_books_issued_to
 from constants import intro_message, cellstyle #, fines, loan_period, max_books, tier_prices, membership_duration
 from transactions import issue_book, settle_fines, return_book
@@ -18,29 +18,30 @@ while run:
 Choose an option
 $ Actions
 1. Add books
-2. Add members
-3. Issue book
-4. Return book
-5. Settle Fines
-6. Pay Membership
+2. Delete books
+3. Add members
+4. Issue book
+5. Return book
+6. Settle Fines
+7. Pay Membership
 
 $ Information
-7. Generic Search - Search books by book, author or genre      
-8. Book Info - Information about the book, current borrower and its transaction history
-9. Member Info - Information about the member, membership status and their transaction history
-10. Membership Info - Information about all members and their membership status
-11. Pending Fines - List of all pending fines
-12. Issued Books - List of all books out of the library
-13. Overdue Books - List all books overdue
-14. Top 10 Books - Top 10 list of most issued books
-15. Top 10 Members - Top 10 list of members who issue books most
-16. Membership Chart - See a pie chart of what memberships members have
-17. Genre Chart - See a pie chart of the genre's available
-18. Revenue Source Chart - See a pie chart of the revenue the library generates from each source
+8. Generic Search - Search books by book, author or genre      
+9. Book Info - Information about the book, current borrower and its transaction history
+10. Member Info - Information about the member, membership status and their transaction history
+11. Membership Info - Information about all members and their membership status
+12. Pending Fines - List of all pending fines
+13. Issued Books - List of all books out of the library
+14. Overdue Books - List all books overdue
+15. Top 10 Books - Top 10 list of most issued books
+16. Top 10 Members - Top 10 list of members who issue books most
+17. Membership Chart - See a pie chart of what memberships members have
+18. Genre Chart - See a pie chart of the genre's available
+19. Revenue Source Chart - See a pie chart of the revenue the library generates from each source
 
-19. Custom Query - Enter your own custom SELECT query          
-20. See Database Schema                  
-21. Exit
+20. Custom Query - Enter your own custom SELECT query          
+21. See Database Schema                  
+22. Exit
 """)
     choice=input("Enter the number: ")
 
@@ -50,28 +51,31 @@ $ Information
     except ValueError:
         print("Try Again!")
         continue # forces the next iteration of the loop
-    if choice not in range(1,21):
+    if choice not in range(1,23):
         print("Try again!")
 
     elif choice==1:
         add_books()
 
     elif choice==2:
-        add_members()
+        delete_book()
 
     elif choice==3:
-        issue_book()
+        add_members()
 
     elif choice==4:
-        return_book()
+        issue_book()
 
     elif choice==5:
+        return_book()
+
+    elif choice==6:
         settle_fines()
 
-    elif choice == 6:
+    elif choice == 7:
         pay_membership()
 
-    elif choice==7:
+    elif choice==8:
         while True:
             method=input("""
 1. Title/Author
@@ -98,35 +102,51 @@ Enter the method of search: """)
                 genre_chart(target_genre)
 
     # Book Info    
-    elif choice==8:
-        book_id=int(input("Enter the book id: "))
+    elif choice==9:
+        while True:
+            query_books_by_name()
+            print()
+            book_id = int(input("Enter the book id to view or enter 0 to search again: "))
+            if book_id==0:
+                continue
+            else:
+                break
+
         # name
         cr.execute("select book_name from books where book_id=%s",(book_id,))
         name=cr.fetchone()[0]
 
-        # current borrower
-        result=currentBorrower(book_id)
-        if result:
-            print(f"""
+        # True by default but becomes optional if the book is found to be deleted
+        show_info=True
+        active=book_exists(book_id)
+        if not active:
+            deleted_choice=input(f"'{name}' is no longer part of the library catalog. Enter if you still want to see its information (y/n): ").lower()
+            show_info = deleted_choice.startswith("y")
+
+        if show_info:
+            # current borrower
+            result=current_borrower(book_id)
+            if result:
+                print(f"""
 Current Borrower
 Member id: {result[0]}
 Member name: {result[1]}
-""")
-        else:
-            print("The book is not currently borrowed.")
+Due: {result[2]}""")
+            else:
+                print("The book is not currently borrowed.")
 
-        print()
+            print()
 
-        # transaction history
-        cr.execute("select transaction_id, members.member_id, member_name, issue_date, return_date from transactions, members where members.member_id=transactions.member_id and book_id=%s order by issue_date", (book_id,))
-        transaction_history=cr.fetchall()
-        headers=["Transaction ID", "Member Id", "Member Name", "Issue Date", "Return Date"]
+            # transaction history
+            cr.execute("select transaction_id, members.member_id, member_name, issue_date, return_date from transactions, members where members.member_id=transactions.member_id and book_id=%s order by issue_date", (book_id,))
+            transaction_history=cr.fetchall()
+            headers=["Transaction ID", "Member Id", "Member Name", "Issue Date", "Return Date"]
 
-        print("Transaction History:")
-        print(tabulate(transaction_history, headers=headers, tablefmt=cellstyle))
+            print("Transaction History:")
+            print(tabulate(transaction_history, headers=headers, tablefmt=cellstyle))
 
     # Member Info
-    elif choice==9:
+    elif choice==10:
         member_id=int(input("Enter the member id: "))
 
         # name
@@ -152,7 +172,7 @@ Member name: {result[1]}
         print(tabulate(membership_history, headers=headers, tablefmt=cellstyle))
 
     # Membership Info
-    elif choice==10:
+    elif choice==11:
         active_membership_info = active_members() # returns list of all (member_id, tier, expiry_date)
         active_member_ids=[]
         if not active_membership_info:
@@ -167,7 +187,7 @@ Member name: {result[1]}
 
             headers = ["Member ID", "Member Name", "Tier", "Membership Expiry Date"]
             print("Active members:")
-            print(tabulate(rows, headers=headers, tablefmt="grid"))
+            print(tabulate(rows, headers=headers, tablefmt=cellstyle))
 
         cr.execute("select member_id, member_name from members")
         all_members=cr.fetchall()
@@ -175,7 +195,7 @@ Member name: {result[1]}
         for member_id, member_name in all_members:
             if member_id not in active_member_ids: # member doesn't have a membership
                 inactive_members.append([member_id, member_name])
-
+        print()
         print("Members without membership:")
         if inactive_members:
             print(tabulate(inactive_members, headers=["Member ID", "Member Name"], tablefmt=cellstyle))
@@ -187,7 +207,7 @@ Member name: {result[1]}
             membership_chart()
 
     # Pending Fines
-    elif choice==11:
+    elif choice==12:
         # condition paid=0 indicates unpaid fines
         cr.execute("select fine_id, member_name, book_name, fine_type, amount from fines, transactions, members, books where paid=0 and members.member_id=transactions.member_id and transactions.transaction_id=fines.transaction_id and transactions.book_id=books.book_id")
         pending_fines=cr.fetchall()
@@ -199,7 +219,7 @@ Member name: {result[1]}
             print(tabulate(pending_fines, headers=headers, tablefmt=cellstyle))
 
     # Issued Books
-    elif choice==12:
+    elif choice==13:
         cr.execute("select transaction_id, book_name, member_name, issue_date, due_date from books, members, transactions where return_date is null and transactions.book_id=books.book_id and transactions.member_id=members.member_id")
         issued_books=cr.fetchall()
         headers=["Transaction ID", "Book Name", "Member Name", "Issue Date", "Due Date"]
@@ -210,7 +230,7 @@ Member name: {result[1]}
             print(tabulate(issued_books, headers=headers, tablefmt=cellstyle))
 
     # Overdue Books
-    elif choice==13:
+    elif choice==14:
         cr.execute("select transaction_id, book_name, member_name, due_date from books, members, transactions where return_date is null and due_date < curdate() and transactions.member_id=members.member_id and transactions.book_id=books.book_id")
         overdue_books=cr.fetchall()
 
@@ -224,23 +244,23 @@ Member name: {result[1]}
             print("Overdue books:")
             print(tabulate(overdue_books, headers=headers, tablefmt=cellstyle))
 
-    elif choice==14:
+    elif choice==15:
         top_ten_books()
 
-    elif choice==15:
+    elif choice==16:
         top_ten_members()
 
-    elif choice==16:
+    elif choice==17:
         membership_chart()
 
-    elif choice==17:
+    elif choice==18:
         genre_chart()
 
-    elif choice==18:
+    elif choice==19:
         revenue_source_chart()
 
     # Custom Query (depreciate)
-    elif choice==19:
+    elif choice==20:
         query=input("Enter your custom SELECT query: ")
         if query.strip().lower().startswith("select"):
             try:
@@ -258,7 +278,7 @@ Member name: {result[1]}
             print("Only SELECT statements are allowed for safety.")
 
     # Database Schema (depreciate)
-    elif choice==20:
+    elif choice==21:
         cr.execute("show tables")
         tables = cr.fetchall()
                 
@@ -272,7 +292,7 @@ Member name: {result[1]}
                 print(f" {col[0]} ({col[1]})")
 
     # Exits program closes the cursor, connection and breaks the loop
-    elif choice==21:
+    elif choice==22:
         print("Exiting program...")
         cr.close()
         connect.close()
@@ -280,5 +300,5 @@ Member name: {result[1]}
         break
 
     # A break before the loop continues to ensure readability in the CLI 
-    if choice != 21:
+    if choice != 22:
         input("\nPress Enter to continue...")

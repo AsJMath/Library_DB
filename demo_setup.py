@@ -10,13 +10,13 @@ def create_and_seed_database():
 
     temp_cr.execute("create database if not exists library_db")
     temp_cr.execute("use library_db")
-    temp_cr.execute("create table if not exists books (book_id int primary key, book_name text, publication_date date, genre text, author_name text)")
+    temp_cr.execute("create table if not exists books (book_id int primary key, book_name text, publication_date date, genre text, author_name text, active tinyint(1) default 1)")
     temp_cr.execute("create table if not exists members (member_id int primary key, member_name text, address text)")
     temp_cr.execute("create table if not exists transactions (transaction_id int primary key, book_id int, member_id int, issue_date date, return_date date, due_date date, foreign key (book_id) references books(book_id), foreign key (member_id) references members(member_id))")
     temp_cr.execute("create table if not exists fines (fine_id int primary key, transaction_id int, fine_type text, amount decimal(6,2), paid tinyint(1), foreign key (transaction_id) references transactions(transaction_id))")
     temp_cr.execute("create table if not exists membership_payments (payment_id int primary key, member_id int, tier text, amount decimal(6,2), payment_date date, coverage_start date, expiry_date date, foreign key (member_id) references members(member_id))")
-    temp_conn.commit()
 
+    temp_conn.commit()
     temp_cr.execute("delete from fines")
     temp_cr.execute("delete from membership_payments")
     temp_cr.execute("delete from transactions")
@@ -25,48 +25,48 @@ def create_and_seed_database():
     temp_conn.commit()
 
     books = [
-        (1, "1984", "1949-06-08", "Dystopian", "George Orwell"),
-        (2, "Animal Farm", "1945-08-17", "Satire", "George Orwell"),
-        (3, "Pride and Prejudice", "1813-01-28", "Romance", "Jane Austen"),
-        (4, "Emma", "1815-12-23", "Romance", "Jane Austen"),
-        (5, "Things Fall Apart", "1958-06-17", "Fiction", "Chinua Achebe"),
-        (6, "Norwegian Wood", "1987-09-04", "Fiction", "Haruki Murakami"),
-        (7, "Kafka on the Shore", "2002-09-12", "Fiction", "Haruki Murakami"),
-        (8, "Beloved", "1987-09-02", "Fiction", "Toni Morrison"),
-        (9, "One Hundred Years of Solitude", "1967-05-30", "Magical Realism", "Gabriel Garcia Marquez"),
-        (10, "Love in the Time of Cholera", "1985-01-01", "Romance", "Gabriel Garcia Marquez"),
-        (11, "Murder on the Orient Express", "1934-01-01", "Mystery", "Agatha Christie"),
-        (12, "And Then There Were None", "1939-11-06", "Mystery", "Agatha Christie"),
-        (13, "The Sound of Waves", "1954-06-10", "Fiction", "Yukio Mishima"),
-        (14, "The God of Small Things", "1997-04-04", "Fiction", "Arundhati Roy"),
-        (15, "Foundation", "1951-05-01", "Sci-Fi", "Isaac Asimov"),
-        (16, "I, Robot", "1950-12-02", "Sci-Fi", "Isaac Asimov"),
-        (17, "Mrs Dalloway", "1925-05-14", "Modernist", "Virginia Woolf"),
-        (18, "To the Lighthouse", "1927-05-05", "Modernist", "Virginia Woolf"),
-        (19, "War and Peace", "1869-01-01", "Historical", "Leo Tolstoy"),
-        (20, "Crime and Punishment", "1866-01-01", "Fiction", "Fyodor Dostoevsky"),
-        (21, "The Hounds of Baskerville", "1902-03-25", "Crime", "Arthur Conan Doyle"),
-        (22, "Harry Potter and the Philosopher's Stone", "1997-06-26", "Fantasy", "J.K. Rowling"),
-        (23, "The Catcher in the Rye", "1951-07-16", "Fiction", "J.D. Salinger"),
-        (24, "Franny and Zooey", "1961-09-14", "Fiction", "J.D. Salinger"),
-        (25, "Brave New World", "1932-08-30", "Dystopian", "Aldous Huxley"),
-        (26, "The Doors of Perception", "1954-01-01", "Non-Fiction", "Aldous Huxley"),
-        (27, "The Great Gatsby", "1925-04-10", "Fiction", "F. Scott Fitzgerald"),
-        (28, "Tender Is the Night", "1934-04-12", "Fiction", "F. Scott Fitzgerald"),
-        (29, "Slaughterhouse-Five", "1969-03-31", "Sci-Fi", "Kurt Vonnegut"),
-        (30, "Cat's Cradle", "1963-01-01", "Sci-Fi", "Kurt Vonnegut"),
-        (31, "The Hobbit", "1937-09-21", "Fantasy", "J.R.R. Tolkien"),
-        (32, "The Fellowship of the Ring", "1954-07-29", "Fantasy", "J.R.R. Tolkien"),
-        (33, "Fahrenheit 451", "1953-10-19", "Dystopian", "Ray Bradbury"),
-        (34, "The Martian Chronicles", "1950-05-04", "Sci-Fi", "Ray Bradbury"),
-        (35, "Wuthering Heights", "1847-12-01", "Romance", "Emily Bronte"),
-        (36, "Jane Eyre", "1847-10-16", "Romance", "Charlotte Bronte"),
-        (37, "The Trial", "1925-04-26", "Fiction", "Franz Kafka"),
-        (38, "The Metamorphosis", "1915-01-01", "Fiction", "Franz Kafka"),
-        (39, "Great Expectations", "1861-08-01", "Fiction", "Charles Dickens"),
-        (40, "A Tale of Two Cities", "1859-04-30", "Historical", "Charles Dickens"),
+        (1, "1984", "1949-06-08", "Dystopian", "George Orwell", 1),
+        (2, "Animal Farm", "1945-08-17", "Satire", "George Orwell", 1),
+        (3, "Pride and Prejudice", "1813-01-28", "Romance", "Jane Austen", 1),
+        (4, "Emma", "1815-12-23", "Romance", "Jane Austen", 1),
+        (5, "Things Fall Apart", "1958-06-17", "Fiction", "Chinua Achebe", 1),
+        (6, "Norwegian Wood", "1987-09-04", "Fiction", "Haruki Murakami", 1),
+        (7, "Kafka on the Shore", "2002-09-12", "Fiction", "Haruki Murakami", 1),
+        (8, "Beloved", "1987-09-02", "Fiction", "Toni Morrison", 1),
+        (9, "One Hundred Years of Solitude", "1967-05-30", "Magical Realism", "Gabriel Garcia Marquez", 1),
+        (10, "Love in the Time of Cholera", "1985-01-01", "Romance", "Gabriel Garcia Marquez", 1),
+        (11, "Murder on the Orient Express", "1934-01-01", "Mystery", "Agatha Christie", 1),
+        (12, "And Then There Were None", "1939-11-06", "Mystery", "Agatha Christie", 1),
+        (13, "The Sound of Waves", "1954-06-10", "Fiction", "Yukio Mishima", 1),
+        (14, "The God of Small Things", "1997-04-04", "Fiction", "Arundhati Roy", 1),
+        (15, "Foundation", "1951-05-01", "Sci-Fi", "Isaac Asimov", 1),
+        (16, "I, Robot", "1950-12-02", "Sci-Fi", "Isaac Asimov", 1),
+        (17, "Mrs Dalloway", "1925-05-14", "Modernist", "Virginia Woolf", 1),
+        (18, "To the Lighthouse", "1927-05-05", "Modernist", "Virginia Woolf", 1),
+        (19, "War and Peace", "1869-01-01", "Historical", "Leo Tolstoy", 1),
+        (20, "Crime and Punishment", "1866-01-01", "Fiction", "Fyodor Dostoevsky", 1),
+        (21, "The Hounds of Baskerville", "1902-03-25", "Crime", "Arthur Conan Doyle", 1),
+        (22, "Harry Potter and the Philosopher's Stone", "1997-06-26", "Fantasy", "J.K. Rowling", 1),
+        (23, "The Catcher in the Rye", "1951-07-16", "Fiction", "J.D. Salinger", 1),
+        (24, "Franny and Zooey", "1961-09-14", "Fiction", "J.D. Salinger", 1),
+        (25, "Brave New World", "1932-08-30", "Dystopian", "Aldous Huxley", 1),
+        (26, "The Doors of Perception", "1954-01-01", "Non-Fiction", "Aldous Huxley", 1),
+        (27, "The Great Gatsby", "1925-04-10", "Fiction", "F. Scott Fitzgerald", 1),
+        (28, "Tender Is the Night", "1934-04-12", "Fiction", "F. Scott Fitzgerald", 1),
+        (29, "Slaughterhouse-Five", "1969-03-31", "Sci-Fi", "Kurt Vonnegut", 1),
+        (30, "Cat's Cradle", "1963-01-01", "Sci-Fi", "Kurt Vonnegut", 1),
+        (31, "The Hobbit", "1937-09-21", "Fantasy", "J.R.R. Tolkien", 1),
+        (32, "The Fellowship of the Ring", "1954-07-29", "Fantasy", "J.R.R. Tolkien", 1),
+        (33, "Fahrenheit 451", "1953-10-19", "Dystopian", "Ray Bradbury", 1),
+        (34, "The Martian Chronicles", "1950-05-04", "Sci-Fi", "Ray Bradbury", 1),
+        (35, "Wuthering Heights", "1847-12-01", "Romance", "Emily Bronte", 1),
+        (36, "Jane Eyre", "1847-10-16", "Romance", "Charlotte Bronte", 1),
+        (37, "The Trial", "1925-04-26", "Fiction", "Franz Kafka", 1),
+        (38, "The Metamorphosis", "1915-01-01", "Fiction", "Franz Kafka", 1),
+        (39, "Great Expectations", "1861-08-01", "Fiction", "Charles Dickens", 1),
+        (40, "A Tale of Two Cities", "1859-04-30", "Historical", "Charles Dickens", 1),
     ]
-    temp_cr.executemany("insert into books values (%s, %s, %s, %s, %s)", books)
+    temp_cr.executemany("insert into books values (%s, %s, %s, %s, %s, %s)", books)
     temp_conn.commit()
 
     # --- Members ---
@@ -190,7 +190,7 @@ def create_and_seed_database():
     )
     temp_conn.commit()
 
-    print("Demo database created and seeded successfully.")
+    print("Demo database created and seeded successfully. Connection closed.")
     temp_conn.close()
 
 create_and_seed_database()

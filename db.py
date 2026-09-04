@@ -11,7 +11,7 @@ def create_database():
 
     temp_cr.execute("create database if not exists library_db")
     temp_cr.execute("use library_db")
-    temp_cr.execute("create table if not exists books (book_id int primary key, book_name text, publication_date date, genre text, author_name text)")
+    temp_cr.execute("create table if not exists books (book_id int primary key, book_name text, publication_date date, genre text, author_name text, active tinyint(1) default 1)")
     temp_cr.execute("create table if not exists members (member_id int primary key, member_name text, address text)")
     temp_cr.execute("create table if not exists transactions (transaction_id int primary key, book_id int, member_id int, issue_date date, return_date date, due_date date, foreign key (book_id) references books(book_id), foreign key (member_id) references members(member_id))")
     temp_cr.execute("create table if not exists fines (fine_id int primary key, transaction_id int, fine_type text, amount decimal(6,2), paid tinyint(1), foreign key (transaction_id) references transactions(transaction_id))")

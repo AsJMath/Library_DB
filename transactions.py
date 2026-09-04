@@ -1,6 +1,6 @@
 # FILES
 from db import connect, cr, next_id
-from books import is_available, query_books_by_name
+from books import is_available, query_books_by_name, book_exists
 from members import is_active_member, no_of_books_issued_to
 from dates import is_late, add_date
 from constants import max_books, loan_period, fines, cellstyle
@@ -18,11 +18,13 @@ def issue_book():
         book_id = int(input("Enter the book id to issue or enter 0 to seach again: "))
         if book_id==0:
             continue
-        if is_available(book_id):
-            # book is available i.e. is in the library and can be issued (thus proceed)
-            break
-        else:
+        if not book_exists(book_id):
+            print("This book no longer exists in the catalog.")
+        elif not is_available(book_id):
             print("This book is out of the library and cannot be issued.")
+        else:
+            # book exists and is available (thus proceed)
+            break
 
     member_id=int(input("Enter the member id: "))
 
@@ -32,7 +34,7 @@ def issue_book():
         print("No active membership on record. Please register or renew before issuing.")
         return
     else:
-        print(f"Member has a active {member_tier} membership and has taken {no_of_books_issued_to(member_id)} out of the permitted {max_books[member_tier]}  books.")
+        print(f"Member has a active {member_tier} membership and has taken {no_of_books_issued_to(member_id)} out of the permitted {max_books[member_tier]} books.")
 
     # If the member is has an active membership, check if the member has exceeded their limit on issuing books
     books_currently_issued = no_of_books_issued_to(member_id)

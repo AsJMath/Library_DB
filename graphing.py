@@ -36,8 +36,8 @@ def plot_top_ten(labels, values, xlabel, ylabel, title):
     plt.subplots_adjust(left=0.3)
     plt.tight_layout()
     plt.show()
- 
- 
+
+# Doesn't consider if the book is active or not; relies on historical data and can be useful to the librarian to find out of the book should be reactivated
 def top_ten_books():
     cr.execute("select books.book_name, count(transactions.transaction_id) from transactions, books where transactions.book_id=books.book_id group by books.book_id, books.book_name order by count(transactions.transaction_id) desc limit 10")
     result = cr.fetchall()
@@ -49,7 +49,6 @@ def top_ten_books():
         values.append(row[1])
  
     plot_top_ten(labels, values, "Number of times issued", "Books", "Top 10 Books")
- 
  
 def top_ten_members():
     cr.execute("select members.member_name, count(transactions.transaction_id) from transactions, members where transactions.member_id=members.member_id group by members.member_id, members.member_name order by count(transactions.transaction_id) desc limit 10")
@@ -111,8 +110,8 @@ def genre_chart(target_genre=None):
         else:
             explode_list.append(0)
 
-    cr.execute("select book_id, genre from books")
-    result=cr.fetchall()
+    cr.execute("select book_id, genre from books where active=1")
+    result=cr.fetchall() # Nested tuple like ((<book_id>, <genre>),)
 
     for record in result:
         all_genres[record[1]]+=1
