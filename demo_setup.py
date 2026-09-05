@@ -11,7 +11,7 @@ def create_and_seed_database():
     temp_cr.execute("create database if not exists library_db")
     temp_cr.execute("use library_db")
     temp_cr.execute("create table if not exists books (book_id int primary key, book_name text, publication_date date, genre text, author_name text, active tinyint(1) default 1)")
-    temp_cr.execute("create table if not exists members (member_id int primary key, member_name text, address text)")
+    temp_cr.execute("create table if not exists members (member_id int primary key, member_name text, email_address varchar(255))")
     temp_cr.execute("create table if not exists transactions (transaction_id int primary key, book_id int, member_id int, issue_date date, return_date date, due_date date, foreign key (book_id) references books(book_id), foreign key (member_id) references members(member_id))")
     temp_cr.execute("create table if not exists fines (fine_id int primary key, transaction_id int, fine_type text, amount decimal(6,2), paid tinyint(1), foreign key (transaction_id) references transactions(transaction_id))")
     temp_cr.execute("create table if not exists membership_payments (payment_id int primary key, member_id int, tier text, amount decimal(6,2), payment_date date, coverage_start date, expiry_date date, foreign key (member_id) references members(member_id))")
@@ -71,26 +71,26 @@ def create_and_seed_database():
 
     # --- Members ---
     members = [
-        (1, "Aditi Sharma", "12 MG Road, Bangalore"),
-        (2, "Rohan Mehta", "45 Park Street, Kolkata"),
-        (3, "Sneha Iyer", "7 Anna Salai, Chennai"),
-        (4, "Karan Malhotra", "23 Linking Road, Mumbai"),
-        (5, "Priya Nair", "9 Residency Road, Bangalore"),
-        (6, "Vikram Singh", "18 Civil Lines, Delhi"),
-        (7, "Ananya Reddy", "5 Banjara Hills, Hyderabad"),
-        (8, "Arjun Kapoor", "31 Camac Street, Kolkata"),
-        (9, "Neha Gupta", "14 FC Road, Pune"),
-        (10, "Rahul Verma", "2 Sector 17, Chandigarh"),
-        (11, "Ishaan Bhatt", "22 Marine Drive, Mumbai"),
-        (12, "Meera Krishnan", "9 Cathedral Road, Chennai"),
-        (13, "Aarav Joshi", "17 Koramangala, Bangalore"),
-        (14, "Divya Menon", "3 Jubilee Hills, Hyderabad"),
-        (15, "Kabir Chatterjee", "56 Salt Lake, Kolkata"),
-        (16, "Ritika Desai", "8 SG Highway, Ahmedabad"),
-        (17, "Yash Rathod", "14 Sector 21, Chandigarh"),
-        (18, "Ananya Pillai", "27 MG Road, Pune"),
-        (19, "Dev Malhotra", "40 Vasant Kunj, Delhi"),
-        (20, "Simran Kaur", "11 Model Town, Ludhiana"),
+        (1, "Aditi Sharma", "aditi.sharma@example.com"),
+        (2, "Rohan Mehta", "rohan.mehta@example.com"),
+        (3, "Sneha Iyer", "sneha.iyer@example.com"),
+        (4, "Karan Malhotra", "karan.malhotra@example.com"),
+        (5, "Priya Nair", "priya.nair@example.com"),
+        (6, "Vikram Singh", "vikram.singh@example.com"),
+        (7, "Ananya Reddy", "ananya.reddy@example.com"),
+        (8, "Arjun Kapoor", "arjun.kapoor@example.com"),
+        (9, "Neha Gupta", "neha.gupta@example.com"),
+        (10, "Rahul Verma", "rahul.verma@example.com"),
+        (11, "Ishaan Bhatt", "ishaan.bhatt@example.com"),
+        (12, "Meera Krishnan", "meera.krishnan@example.com"),
+        (13, "Aarav Joshi", "aarav.joshi@example.com"),
+        (14, "Divya Menon", "divya.menon@example.com"),
+        (15, "Kabir Chatterjee", "kabir.chatterjee@example.com"),
+        (16, "Ritika Desai", "ritika.desai@example.com"),
+        (17, "Yash Rathod", "yash.rathod@example.com"),
+        (18, "Ananya Pillai", "ananya.pillai@example.com"),
+        (19, "Dev Malhotra", "dev.malhotra@example.com"),
+        (20, "Simran Kaur", "simran.kaur@example.com"),
     ]
     temp_cr.executemany("insert into members values (%s, %s, %s)", members)
     temp_conn.commit()
@@ -190,7 +190,7 @@ def create_and_seed_database():
     )
     temp_conn.commit()
 
-    print("Demo database created and seeded successfully. Connection closed.")
+    print("Demo database created and seeded successfully.")
     temp_conn.close()
 
 create_and_seed_database()

@@ -7,6 +7,7 @@ from constants import intro_message, cellstyle #, fines, loan_period, max_books,
 from transactions import issue_book, settle_fines, return_book
 from graphing import top_ten_books, top_ten_members, membership_chart, genre_chart, revenue_source_chart
 # from dates import is_late, add_date
+from mailer import send_mail, draft_group_emails
 
 # MODULES
 from tabulate import tabulate
@@ -32,16 +33,19 @@ $ Information
 11. Membership Info - Information about all members and their membership status
 12. Pending Fines - List of all pending fines
 13. Issued Books - List of all books out of the library
-14. Overdue Books - List all books overdue
-15. Top 10 Books - Top 10 list of most issued books
-16. Top 10 Members - Top 10 list of members who issue books most
-17. Membership Chart - See a pie chart of what memberships members have
-18. Genre Chart - See a pie chart of the genre's available
-19. Revenue Source Chart - See a pie chart of the revenue the library generates from each source
+14. Due Today - List of all book due today
+15. Overdue Books - List all books overdue
+16. Top 10 Books - Top 10 list of most issued books
+17. Top 10 Members - Top 10 list of members who issue books most
+18. Membership Chart - See a pie chart of what memberships members have
+19. Genre Chart - See a pie chart of the genre's available
+20. Revenue Source Chart - See a pie chart of the revenue the library generates from each source
+21. Exit
 
-20. Custom Query - Enter your own custom SELECT query          
-21. See Database Schema                  
-22. Exit
+$ Advanced
+22. Custom Query - Enter your own custom SELECT query          
+23. See Database Schema                  
+
 """)
     choice=input("Enter the number: ")
 
@@ -51,7 +55,7 @@ $ Information
     except ValueError:
         print("Try Again!")
         continue # forces the next iteration of the loop
-    if choice not in range(1,23):
+    if choice not in range(1,24):
         print("Try again!")
 
     elif choice==1:
@@ -229,38 +233,61 @@ Due: {result[2]}""")
             print("Issued books:")
             print(tabulate(issued_books, headers=headers, tablefmt=cellstyle))
 
-    # Overdue Books
+    # Due Today
     elif choice==14:
-        cr.execute("select transaction_id, book_name, member_name, due_date from books, members, transactions where return_date is null and due_date < curdate() and transactions.member_id=members.member_id and transactions.book_id=books.book_id")
+        cr.execute("select transaction_id, books.book_name, members.member_id, members.member_name, transactions.issue_date from books, members, transactions where return_date is null and due_date=curdate() and transactions.member_id=members.member_id and transactions.book_id=books.book_id")
+        due_today=cr.fetchall()
+
+        if not due_today:
+            print("No books due today.")
+        else: # Books due today exist in the database
+            cr.execute("select curdate()")
+            print("Today:", cr.fetchone()[0].strftime("%Y-%m-%d"))
+
+            headers=["Transaction ID", "Book Name", "Member ID", "Member Name", "Issue Date"]
+            print("Books Due Today:")
+            print(tabulate(due_today, headers=headers, tablefmt=cellstyle))
+
+            choice=input("Enter to send an email to all the members (y/n): ").lower()
+            if choice.startswith("y"):
+                draft_group_emails(due_today, "Books Due Today", case="due today")    
+
+    # Overdue Books
+    elif choice==15:
+        cr.execute("select transaction_id, book_name, members.member_id, members.member_name, due_date, datediff(curdate(), due_date) as days_delayed from books, members, transactions where return_date is null and due_date < curdate() and transactions.member_id=members.member_id and transactions.book_id=books.book_id")
         overdue_books=cr.fetchall()
 
-        cr.execute("select curdate()")
-        print("Today:", cr.fetchone()[0].strftime("%Y-%m-%d"))
-
-        headers=["Transaction ID", "Book Name", "Member Name", "Due Date"]
         if not overdue_books:
             print("No books are currently overdue.")
         else:
+            cr.execute("select curdate()")
+            print("Today:", cr.fetchone()[0].strftime("%Y-%m-%d"))
+
+            headers=["Transaction ID", "Book Name", "Member ID", "Member Name", "Due Date", "Days Delayed"]            
             print("Overdue books:")
             print(tabulate(overdue_books, headers=headers, tablefmt=cellstyle))
 
-    elif choice==15:
-        top_ten_books()
+            choice=input("Enter to send an email to all the members (y/n): ").lower()
+            if choice.startswith("y"):
+                draft_group_emails(overdue_books, "Overdue Books Notice", case="overdue")
 
     elif choice==16:
-        top_ten_members()
+        top_ten_books()
 
     elif choice==17:
-        membership_chart()
+        top_ten_members()
 
     elif choice==18:
-        genre_chart()
+        membership_chart()
 
     elif choice==19:
+        genre_chart()
+
+    elif choice==20:
         revenue_source_chart()
 
     # Custom Query (depreciate)
-    elif choice==20:
+    elif choice==22:
         query=input("Enter your custom SELECT query: ")
         if query.strip().lower().startswith("select"):
             try:
@@ -278,7 +305,7 @@ Due: {result[2]}""")
             print("Only SELECT statements are allowed for safety.")
 
     # Database Schema (depreciate)
-    elif choice==21:
+    elif choice==23:
         cr.execute("show tables")
         tables = cr.fetchall()
                 
@@ -292,7 +319,7 @@ Due: {result[2]}""")
                 print(f" {col[0]} ({col[1]})")
 
     # Exits program closes the cursor, connection and breaks the loop
-    elif choice==22:
+    elif choice==21:
         print("Exiting program...")
         cr.close()
         connect.close()
@@ -300,5 +327,5 @@ Due: {result[2]}""")
         break
 
     # A break before the loop continues to ensure readability in the CLI 
-    if choice != 22:
+    if choice != 21:
         input("\nPress Enter to continue...")

@@ -128,10 +128,22 @@ def revenue_source_chart():
     }
 
     cr.execute("select sum(amount) from fines")
-    revenue_sources["fines"]=float(cr.fetchone()[0])
+    fines_total = cr.fetchone()[0]
+    # float() returns TypeError when encountering a NoneType
+    if fines_total is None:
+        # No rows in fines table, sum() returned NULL
+        revenue_sources["fines"] = 0.0
+    else:
+        revenue_sources["fines"] = float(fines_total)
 
     cr.execute("select sum(amount) from membership_payments")
-    revenue_sources["membership"]=float(cr.fetchone()[0])
+    membership_total = cr.fetchone()[0]
+    # float() returns TypeError when encountering a NoneType
+    if membership_total is None:
+        # No rows in membership_payments table, sum() returned NULL
+        revenue_sources["membership"] = 0.0
+    else:
+        revenue_sources["membership"] = float(membership_total)
     # cr.fetchone() returns a nested tuple with one element, the sum of the amount
 
     pie_chart(label_sequence=revenue_sources.keys(), fractions_sequence=revenue_sources.values(), title="Revenue Chart")

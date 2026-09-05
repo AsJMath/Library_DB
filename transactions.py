@@ -130,7 +130,12 @@ def settle_fines():
     print(tabulate(pending_fines, headers=headers, tablefmt=cellstyle))
 
     # Asks the librarian to choose which of the fine to settle or 0 to settle all of the members fine
-    fine_id = int(input("Enter the fine id for the fine you want to settle or press 0 for settling all fines: "))
+    fine_input = input("Enter the fine id for the fine you want to settle or press 0 for settling all fines: ")
+    try:
+        fine_id = int(fine_input)
+    except ValueError:
+        print("Invalid input. No fines were settled.")
+        return
 
     if fine_id == 0:
         cr.execute("update fines,transactions set fines.paid=1 where transactions.transaction_id=fines.transaction_id and transactions.member_id=%s and fines.paid=0", (member_id,))

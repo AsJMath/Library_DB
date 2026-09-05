@@ -7,9 +7,9 @@ from dates import add_date
 def add_members():
     member_id=next_id("members")
     member_name=input("Enter the name of the member: ")
-    address=input("Enter the members' address: ")
+    email_address=input("Enter the members email address: ")
 
-    cr.execute("insert into members values(%s, %s, %s)", (member_id, member_name, address))
+    cr.execute("insert into members values(%s, %s, %s)", (member_id, member_name, email_address))
     connect.commit()
     print("New member added without membership. Pay membership separately.")
 
