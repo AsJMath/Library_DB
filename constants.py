@@ -40,3 +40,13 @@ intro_message="""
 *****WELCOME TO THE LIBRARY MANAGEMENT SYSTEM*****
 **************************************************      
 """
+
+credits_message="""
+|===========================================|
+|Made By: Ashwin Joshi and Sharvil Rajan    |
+|                                           |
+|Tools: VSCode, Python, MySQL, matplotlib,  |
+|       rapidfuzz, textwrap, webbrowser,    |
+|       mysqlconnector, tabulate, datetime  |
+|===========================================|
+"""

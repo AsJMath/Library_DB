@@ -144,3 +144,8 @@ def settle_fines():
             print("Invalid fine ID for this member, or already paid.")
         else:
             print("Fine settled.")
+
+def pending_fines():
+        cr.execute("select fine_id, member_name, book_name, fine_type, amount from fines, transactions, members, books where paid=0 and members.member_id=transactions.member_id and transactions.transaction_id=fines.transaction_id and transactions.book_id=books.book_id")
+        pending_fines_list=cr.fetchall()
+        return pending_fines_list # returns the result or []

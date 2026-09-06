@@ -1,10 +1,10 @@
 # FILES
 from db import connect, cr
 # import db automatically runs the db file and create database is called
-from books import add_books, delete_book, current_borrower, query_books_by_genre, query_books_by_name, book_exists
+from books import add_books, delete_book, current_borrower, query_books_by_genre, query_books_by_name, book_exists, issued_books, due_today_books, overdue_books
 from members import add_members, active_members, is_active_member, pay_membership
-from constants import intro_message, cellstyle, tier_info, tier_prices
-from transactions import issue_book, settle_fines, return_book
+from constants import intro_message, cellstyle, tier_info, credits_message
+from transactions import issue_book, settle_fines, return_book, pending_fines
 from graphing import top_ten_books, top_ten_members, membership_chart, genre_chart, revenue_source_chart
 from mailer import draft_group_emails
 
@@ -13,8 +13,20 @@ from tabulate import tabulate
 
 print(intro_message)
 run=True
-while run:
-    print("""
+while run:   
+    # Indicator System
+    pending_fines_list = pending_fines()
+    issued_books_list = issued_books()
+    due_today_list = due_today_books()
+    overdue_books_list = overdue_books()
+
+    indicator=" [!!]"
+    pending_fines_indicator = indicator if pending_fines_list else ""
+    issued_books_indicator = indicator if issued_books_list else ""
+    due_today_books_indicator = indicator if due_today_list else ""
+    overdue_books_indicator = indicator if overdue_books_list else ""
+
+    print(f"""
 Choose an option
 $ Actions
 1. Add books
@@ -30,10 +42,10 @@ $ Information
 9. Book Info - Information about the book, current borrower and its transaction history
 10. Member Info - Information about the member, membership status and their transaction history
 11. Membership Info - Information about all members and their membership status
-12. Pending Fines - List of all pending fines
-13. Issued Books - List of all books out of the library
-14. Due Today - List of all book due today
-15. Overdue Books - List all books overdue
+12. Pending Fines{pending_fines_indicator} - List of all pending fines
+13. Issued Books{issued_books_indicator} - List of all books out of the library
+14. Due Today{due_today_books_indicator} - List of all book due today
+15. Overdue Books{overdue_books_indicator} - List all books overdue
 16. Tier Info - List all the tiers and their benefits
 
 $ Charts
@@ -47,43 +59,50 @@ $ Charts
 $ Advanced
 23. Custom Query - Enter your own custom SELECT query          
 24. See Database Schema                  
-
 """)
-    choice=input("Enter the number: ")
+    
+    num_choice=input("Enter the number: ")
+    if num_choice=="credits":
+        print(credits_message)
+        input("\nPress Enter to continue...")
+        continue
 
     # Handles stray values that are not integers or that are not within the valid ranges
     try:
-        choice=int(choice)
+        num_choice=int(num_choice)
     except ValueError:
         print("Try Again!")
         continue # forces the next iteration of the loop
-    if choice not in range(1,24):
-        print("Try again!")
 
-    elif choice==1:
+    if num_choice not in range(1,25):
+        print("Try again with a number from 1 to 24")
+
+    elif num_choice==1:
         add_books()
 
-    elif choice==2:
+    elif num_choice==2:
         delete_book()
 
-    elif choice==3:
+    elif num_choice==3:
         add_members()
 
-    elif choice==4:
+    elif num_choice==4:
         issue_book()
 
-    elif choice==5:
+    elif num_choice==5:
         return_book()
 
-    elif choice==6:
+    elif num_choice==6:
         settle_fines()
 
-    elif choice == 7:
+    elif num_choice == 7:
         pay_membership()
 
-    elif choice==8:
+    elif num_choice==8:
+        # while loop handles stray values for the method input
         while True:
             method=input("""
+Available Methods of Search
 1. Title/Author
 2. Genre
 Enter the method of search: """)
@@ -108,7 +127,7 @@ Enter the method of search: """)
                 genre_chart(target_genre)
 
     # Book Info    
-    elif choice==9:
+    elif num_choice==9:
         while True:
             query_books_by_name()
             print()
@@ -152,7 +171,7 @@ Due: {result[2]}""")
             print(tabulate(transaction_history, headers=headers, tablefmt=cellstyle))
 
     # Member Info
-    elif choice==10:
+    elif num_choice==10:
         member_id=int(input("Enter the member id: "))
 
         # name
@@ -178,7 +197,7 @@ Due: {result[2]}""")
         print(tabulate(membership_history, headers=headers, tablefmt=cellstyle))
 
     # Membership Info
-    elif choice==11:
+    elif num_choice==11:
         active_membership_info = active_members() # returns list of all (member_id, tier, expiry_date)
         active_member_ids=[]
         if not active_membership_info:
@@ -213,34 +232,27 @@ Due: {result[2]}""")
             membership_chart()
 
     # Pending Fines
-    elif choice==12:
+    elif num_choice==12:
         # condition paid=0 indicates unpaid fines
-        cr.execute("select fine_id, member_name, book_name, fine_type, amount from fines, transactions, members, books where paid=0 and members.member_id=transactions.member_id and transactions.transaction_id=fines.transaction_id and transactions.book_id=books.book_id")
-        pending_fines=cr.fetchall()
-        headers=["Fine ID", "Member Name", "Book Name", "Fine Type", "Amount (Rs.)"]
-        if not pending_fines:
+        if not pending_fines_list:
             print("No fines are currently pending.")
         else:
+            headers=["Fine ID", "Member Name", "Book Name", "Fine Type", "Amount (Rs.)"]
             print("Pending fines:")
-            print(tabulate(pending_fines, headers=headers, tablefmt=cellstyle))
+            print(tabulate(pending_fines_list, headers=headers, tablefmt=cellstyle))
 
-    # Issued Books
-    elif choice==13:
-        cr.execute("select transaction_id, book_name, member_name, issue_date, due_date from books, members, transactions where return_date is null and transactions.book_id=books.book_id and transactions.member_id=members.member_id")
-        issued_books=cr.fetchall()
-        headers=["Transaction ID", "Book Name", "Member Name", "Issue Date", "Due Date"]
-        if not issued_books:
+    # Issued Books - All issued books including overdue books
+    elif num_choice==13:
+        if not issued_books_list:
             print("No books are currently issued.")
         else:
+            headers=["Transaction ID", "Book Name", "Member Name", "Issue Date", "Due Date"]
             print("Issued books:")
-            print(tabulate(issued_books, headers=headers, tablefmt=cellstyle))
+            print(tabulate(issued_books_list, headers=headers, tablefmt=cellstyle))
 
     # Due Today
-    elif choice==14:
-        cr.execute("select transaction_id, books.book_name, members.member_id, members.member_name, transactions.issue_date from books, members, transactions where return_date is null and due_date=curdate() and transactions.member_id=members.member_id and transactions.book_id=books.book_id")
-        due_today=cr.fetchall()
-
-        if not due_today:
+    elif num_choice==14:
+        if not due_today_list:
             print("No books due today.")
         else: # Books due today exist in the database
             cr.execute("select curdate()")
@@ -248,18 +260,15 @@ Due: {result[2]}""")
 
             headers=["Transaction ID", "Book Name", "Member ID", "Member Name", "Issue Date"]
             print("Books Due Today:")
-            print(tabulate(due_today, headers=headers, tablefmt=cellstyle))
+            print(tabulate(due_today_list, headers=headers, tablefmt=cellstyle))
 
-            choice=input("Enter to send an email to all the members (y/n): ").lower()
-            if choice.startswith("y"):
-                draft_group_emails(due_today, "Books Due Today", case="due today")    
+            mail_due_choice=input("Enter to send an email to all the members (y/n): ").lower()
+            if mail_due_choice.startswith("y"):
+                draft_group_emails(due_today_list, "Books Due Today", case="due today")    
 
     # Overdue Books
-    elif choice==15:
-        cr.execute("select transaction_id, book_name, members.member_id, members.member_name, due_date, datediff(curdate(), due_date) as days_delayed from books, members, transactions where return_date is null and due_date < curdate() and transactions.member_id=members.member_id and transactions.book_id=books.book_id")
-        overdue_books=cr.fetchall()
-
-        if not overdue_books:
+    elif num_choice==15:
+        if not overdue_books_list:
             print("No books are currently overdue.")
         else:
             cr.execute("select curdate()")
@@ -267,33 +276,34 @@ Due: {result[2]}""")
 
             headers=["Transaction ID", "Book Name", "Member ID", "Member Name", "Due Date", "Days Delayed"]            
             print("Overdue books:")
-            print(tabulate(overdue_books, headers=headers, tablefmt=cellstyle))
+            print(tabulate(overdue_books_list, headers=headers, tablefmt=cellstyle))
 
-            choice=input("Enter to send an email to all the members (y/n): ").lower()
-            if choice.startswith("y"):
-                draft_group_emails(overdue_books, "Overdue Books Notice", case="overdue")
+            mail_overdue_choice=input("Enter to send an email to all the members (y/n): ").lower()
+            if mail_overdue_choice.startswith("y"):
+                draft_group_emails(overdue_books_list, "Overdue Books Notice", case="overdue")
 
-    elif choice==16:
-        headers = ["Tier", "Price (Rs.)", "Max Books", "Loan Period (days)"]
+    # Tier Information - Tabulated data comparing the tiers
+    elif num_choice==16:
+        headers = ["Tier", "Price (Rs.)", "Maximum Books", "Loan Period (days)"]
         print(tabulate(tier_info, headers=headers, tablefmt=cellstyle))
 
-    elif choice==17:
+    elif num_choice==17:
         top_ten_books()
 
-    elif choice==18:
+    elif num_choice==18:
         top_ten_members()
 
-    elif choice==19:
+    elif num_choice==19:
         membership_chart()
 
-    elif choice==20:
+    elif num_choice==20:
         genre_chart()
 
-    elif choice==21:
+    elif num_choice==21:
         revenue_source_chart()
 
     # Exits program closes the cursor, connection and breaks the loop
-    elif choice==22:
+    elif num_choice==22:
         print("Exiting program...")
         cr.close()
         connect.close()
@@ -301,7 +311,7 @@ Due: {result[2]}""")
         break
 
     # Custom Query (depreciate)
-    elif choice==23:
+    elif num_choice==23:
         query=input("Enter your custom SELECT query: ")
         if query.strip().lower().startswith("select"):
             try:
@@ -319,7 +329,7 @@ Due: {result[2]}""")
             print("Only SELECT statements are allowed for safety.")
 
     # Database Schema (depreciate)
-    elif choice==24:
+    elif num_choice==24:
         cr.execute("show tables")
         tables = cr.fetchall()
                 
@@ -333,5 +343,5 @@ Due: {result[2]}""")
                 print(f" {col[0]} ({col[1]})")
 
     # A break before the loop continues to ensure readability in the CLI 
-    if choice != 22:
+    if num_choice != 22:
         input("\nPress Enter to continue...")

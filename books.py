@@ -188,3 +188,18 @@ def delete_book():
     cr.execute("update books set active=0 where book_id=%s", (book_id,))
     connect.commit()
     print(f"Book has been removed from the catalog.")
+
+def issued_books():
+    cr.execute("select transaction_id, book_name, member_name, issue_date, due_date from books, members, transactions where return_date is null and transactions.book_id=books.book_id and transactions.member_id=members.member_id")
+    issued_books_list=cr.fetchall()
+    return issued_books_list
+
+def due_today_books():
+    cr.execute("select transaction_id, books.book_name, members.member_id, members.member_name, transactions.issue_date from books, members, transactions where return_date is null and due_date=curdate() and transactions.member_id=members.member_id and transactions.book_id=books.book_id")
+    due_today_list=cr.fetchall()
+    return due_today_list
+
+def overdue_books():
+    cr.execute("select transaction_id, book_name, members.member_id, members.member_name, due_date, datediff(curdate(), due_date) as days_delayed from books, members, transactions where return_date is null and due_date < curdate() and transactions.member_id=members.member_id and transactions.book_id=books.book_id")
+    overdue_books_list=cr.fetchall()
+    return overdue_books_list

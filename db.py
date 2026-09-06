@@ -25,22 +25,3 @@ create_database()
 
 connect=ms.connect(host="localhost", user="root", password=mysqlpassword, database="library_db")
 cr=connect.cursor()
-
-# # Static dictionary of all the primary keys for use in the next_id function
-# primkeys = {
-#     "books": "book_id",
-#     "members": "member_id",
-#     "transactions": "transaction_id",
-#     "fines": "fine_id",
-#     "membership_payments": "payment_id"
-# }
-
-# # Automatically creates the next primary key [the python alternative for autoincrement from SQL]
-# def next_id(table_name):
-#     primkey = primkeys[table_name]
-#     cr.execute(f"select max({primkey}) from {table_name}")
-#     max_id=cr.fetchone()[0]
-#     if max_id is None:
-#         return 1
-#     else:
-#         return max_id + 1
