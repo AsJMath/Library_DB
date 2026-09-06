@@ -4,12 +4,12 @@ from db import cr, connect
 # MODULES
 import webbrowser
 import urllib.parse
-from tabulate import tabulate
+# SMTP (Simple Mail Transfer Protocol) was avoided due to compatability complications arising form 2FA systems of internet mail providers like gmail, outlook, etc...
 
 # PARTS OF A URL
 """
 https://www.example.com:443/library/books?genre=fiction&sort=title#results
-1. Scheme [https://] - Tells the OS/browser how to communicate, i.e. what protocol to use
+1. Scheme [https://] - Tells the OS/browser how to communicate, i.e. what protocol to use or what to do with the link that is incoming
 2. Host [www.example.com] - The address/server being connected to
 3. Port [:443] - Directs data to the correct application
 4. Path [/library/books] - A specifice source or path within that webpage
@@ -27,6 +27,7 @@ mailto:aditi@example.com?subject=Library%20Fine%20Notice&body=Hi
 5. Query String = ?subject=Library%20Fine%20Notice&body=Hi
 6. Fragment - Ommited
 """
+# mailto: is a non-network protocol, meaning it runs locally without connecting to a server, unlike https:
 
 def send_mail(to, subject, body, cc=None, bcc=None):
     params = {'subject': subject, 'body': body}

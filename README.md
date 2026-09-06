@@ -1,3 +1,4 @@
+### DISCLAIMER: This README.md file has been AI generated using Claude™ Sonnet 5 (free) as provided by Anthropic™
 # Library Management System
 
 A menu-driven Python + MySQL application for managing a library's books, members, transactions, fines, and memberships — with fuzzy search, visual analytics, and email drafting.
