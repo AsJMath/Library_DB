@@ -28,6 +28,11 @@ tier_prices = {
     "student": 100
 }
 
+tier_info=[]
+# Dynamically generates the tier information to tabulate
+for tier in tier_prices.keys():
+    tier_info.append( [tier, tier_prices[tier], max_books[tier], loan_period[tier]] )
+
 membership_duration = 300  # ~10 months
 
 intro_message="""

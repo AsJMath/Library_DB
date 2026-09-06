@@ -1,13 +1,12 @@
 # FILES
-from db import connect, cr #, next_id
+from db import connect, cr
 # import db automatically runs the db file and create database is called
-from books import add_books, delete_book, current_borrower, query_books_by_genre, query_books_by_name, book_exists #, is_available
-from members import add_members, active_members, is_active_member, pay_membership #, no_of_books_issued_to
-from constants import intro_message, cellstyle #, fines, loan_period, max_books, tier_prices, membership_duration
+from books import add_books, delete_book, current_borrower, query_books_by_genre, query_books_by_name, book_exists
+from members import add_members, active_members, is_active_member, pay_membership
+from constants import intro_message, cellstyle, tier_info, tier_prices
 from transactions import issue_book, settle_fines, return_book
 from graphing import top_ten_books, top_ten_members, membership_chart, genre_chart, revenue_source_chart
-# from dates import is_late, add_date
-from mailer import send_mail, draft_group_emails
+from mailer import draft_group_emails
 
 # MODULES
 from tabulate import tabulate
@@ -35,16 +34,19 @@ $ Information
 13. Issued Books - List of all books out of the library
 14. Due Today - List of all book due today
 15. Overdue Books - List all books overdue
-16. Top 10 Books - Top 10 list of most issued books
-17. Top 10 Members - Top 10 list of members who issue books most
-18. Membership Chart - See a pie chart of what memberships members have
-19. Genre Chart - See a pie chart of the genre's available
-20. Revenue Source Chart - See a pie chart of the revenue the library generates from each source
-21. Exit
+16. Tier Info - List all the tiers and their benefits
+
+$ Charts
+17. Top 10 Books - Top 10 list of most issued books
+18. Top 10 Members - Top 10 list of members who issue books most
+19. Membership Chart - See a pie chart of what memberships members have
+20. Genre Chart - See a pie chart of the genre's available
+21. Revenue Source Chart - See a pie chart of the revenue the library generates from each source
+22. Exit
 
 $ Advanced
-22. Custom Query - Enter your own custom SELECT query          
-23. See Database Schema                  
+23. Custom Query - Enter your own custom SELECT query          
+24. See Database Schema                  
 
 """)
     choice=input("Enter the number: ")
@@ -272,22 +274,34 @@ Due: {result[2]}""")
                 draft_group_emails(overdue_books, "Overdue Books Notice", case="overdue")
 
     elif choice==16:
-        top_ten_books()
+        headers = ["Tier", "Price (Rs.)", "Max Books", "Loan Period (days)"]
+        print(tabulate(tier_info, headers=headers, tablefmt=cellstyle))
 
     elif choice==17:
-        top_ten_members()
+        top_ten_books()
 
     elif choice==18:
-        membership_chart()
+        top_ten_members()
 
     elif choice==19:
-        genre_chart()
+        membership_chart()
 
     elif choice==20:
+        genre_chart()
+
+    elif choice==21:
         revenue_source_chart()
 
-    # Custom Query (depreciate)
+    # Exits program closes the cursor, connection and breaks the loop
     elif choice==22:
+        print("Exiting program...")
+        cr.close()
+        connect.close()
+        run=False
+        break
+
+    # Custom Query (depreciate)
+    elif choice==23:
         query=input("Enter your custom SELECT query: ")
         if query.strip().lower().startswith("select"):
             try:
@@ -305,7 +319,7 @@ Due: {result[2]}""")
             print("Only SELECT statements are allowed for safety.")
 
     # Database Schema (depreciate)
-    elif choice==23:
+    elif choice==24:
         cr.execute("show tables")
         tables = cr.fetchall()
                 
@@ -318,14 +332,6 @@ Due: {result[2]}""")
             for col in columns:
                 print(f" {col[0]} ({col[1]})")
 
-    # Exits program closes the cursor, connection and breaks the loop
-    elif choice==21:
-        print("Exiting program...")
-        cr.close()
-        connect.close()
-        run=False
-        break
-
     # A break before the loop continues to ensure readability in the CLI 
-    if choice != 21:
+    if choice != 22:
         input("\nPress Enter to continue...")

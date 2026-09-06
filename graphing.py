@@ -1,5 +1,5 @@
 # FILES
-from db import cr  # , connect, next_id
+from db import cr
 from members import is_active_member
 
 # MODULES

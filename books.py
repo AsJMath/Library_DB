@@ -1,5 +1,5 @@
 # FILES
-from db import connect, cr, next_id
+from db import connect, cr
 from constants import cellstyle
 
 # MODULES
@@ -75,12 +75,12 @@ def add_books():
                     return
 
     print("Adding as a new book...")
-    book_id=next_id("books")
     publication_date=input("Enter the date of publication in YYYY-MM-DD: ")
     genre=input("Enter the genre: ")
     author_name=input("Enter the name of the author: ")
 
-    cr.execute("insert into books values(%s, %s, %s, %s, %s, %s)", (book_id, book_name, publication_date, genre, author_name, 1))
+    cr.execute("insert into books (book_name, publication_date, genre, author_name, active) values (%s, %s, %s, %s, %s)", (book_name, publication_date, genre, author_name, 1))
+
     connect.commit()
     print("New book added.")
 

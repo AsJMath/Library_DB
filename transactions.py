@@ -1,5 +1,5 @@
 # FILES
-from db import connect, cr, next_id
+from db import connect, cr
 from books import is_available, query_books_by_name, book_exists
 from members import is_active_member, no_of_books_issued_to
 from dates import is_late, add_date
@@ -9,8 +9,6 @@ from constants import max_books, loan_period, fines, cellstyle
 from tabulate import tabulate
 
 def issue_book():
-    transaction_id=next_id("transactions")
-
     # Allows the librarian to search for the book and identify which one to issue based on generic search
     while True:
         query_books_by_name()
@@ -47,7 +45,7 @@ def issue_book():
     return_date=None #gets converted to NULL
     due_date=add_date(issue_date, loan_period[member_tier])
 
-    cr.execute("insert into transactions values(%s, %s, %s, %s, %s, %s)", (transaction_id, book_id, member_id, issue_date, return_date, due_date))
+    cr.execute("insert into transactions (book_id, member_id, issue_date, return_date, due_date) values (%s, %s, %s, %s, %s)", (book_id, member_id, issue_date, return_date, due_date))
     connect.commit()
     print("Book issued.")
 
@@ -88,9 +86,7 @@ def return_book():
         late_amount = days_late * fines["late"]
         print(f"This book is {days_late} days late and Rs. {late_amount} has been charged.")
         is_late_paid=False
-        fine_id=next_id("fines")
-
-        cr.execute("insert into fines values(%s, %s, %s, %s, %s)", (fine_id, transaction_id, 'late', late_amount, is_late_paid))
+        cr.execute("insert into fines (transaction_id, fine_type, amount, paid) values(%s, %s, %s, %s)", (transaction_id, 'late', late_amount, is_late_paid))
         connect.commit()
     else:
         print("This book was returned on time.")
@@ -101,9 +97,8 @@ def return_book():
         if is_damaged=="y":
             damage_amount=fines["damage"]
             is_damage_paid=False
-            fine_id=next_id("fines")
 
-            cr.execute("insert into fines values(%s, %s, %s, %s, %s)", (fine_id, transaction_id, 'damage', damage_amount, is_damage_paid))
+            cr.execute("insert into fines (transaction_id, fine_type, amount, paid) values(%s, %s, %s, %s)", (transaction_id, 'damage', damage_amount, is_damage_paid))
             connect.commit()
             print("Rs. 700 has been charged.")
             break

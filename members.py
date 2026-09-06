@@ -1,16 +1,14 @@
 # FILES
-from db import connect, cr, next_id
-from constants import tier_prices, membership_duration, cellstyle
+from db import connect, cr
+from constants import tier_prices, membership_duration
 from dates import add_date
 
 # Adding new members to the members table
 def add_members():
-    member_id=next_id("members")
     member_name=input("Enter the name of the member: ")
     email_address=input("Enter the members email address: ")
 
-    cr.execute("insert into members values(%s, %s, %s)", (member_id, member_name, email_address))
-    connect.commit()
+    cr.execute("insert into members (member_name, email_address) values (%s, %s)", (member_name, email_address))
     print("New member added without membership. Pay membership separately.")
 
 # Returns the list of all members with an active membership
@@ -60,10 +58,8 @@ def pay_membership():
             start_date = today
 
     expiry_date = add_date(start_date, membership_duration)
-    payment_id = next_id("membership_payments")
 
-    cr.execute("insert into membership_payments values (%s, %s, %s, %s, %s, %s, %s)",
-               (payment_id, member_id, tier, amount, today, start_date, expiry_date))
+    cr.execute("insert into membership_payments(member_id, tier, amount, payment_date, coverage_start, expiry_date) values (%s, %s, %s, %s, %s, %s)", (member_id, tier, amount, today, start_date, expiry_date))
     connect.commit()
 
     print(f"Membership ({tier}) recorded. Amount: Rs.{amount}. Valid until: {expiry_date}.")

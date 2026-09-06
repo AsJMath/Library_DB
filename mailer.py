@@ -1,5 +1,5 @@
 # FILES
-from db import cr, connect
+from db import cr
 
 # MODULES
 import webbrowser
