@@ -129,6 +129,7 @@ def revenue_source_chart():
 
     cr.execute("select sum(amount) from fines")
     fines_total = cr.fetchone()[0]
+    
     # float() returns TypeError when encountering a NoneType
     if fines_total is None:
         # No rows in fines table, sum() returned NULL

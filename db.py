@@ -24,4 +24,10 @@ def create_database():
 create_database()
 
 connect=ms.connect(host="localhost", user="root", password=mysqlpassword, database="library_db")
-cr=connect.cursor()
+cr=connect.cursor(dictionary=False) # Ensures that return results are tuples and not dictionaries
+
+def quit(run_variable):
+        print("Exiting program...")
+        cr.close()
+        connect.close()
+        run_variable=False

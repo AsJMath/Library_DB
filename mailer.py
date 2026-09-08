@@ -87,12 +87,17 @@ def draft_group_emails(rows, subject_line, case):
     index=0
     for member_id, info in grouped_members.items():
         cr.execute("select email_address from members where member_id=%s", (member_id,))
-        email_address=cr.fetchone()[0]
+        result=cr.fetchone()
+        if result is None:
+            print(f"No email on file for {info['name']}. Mail will not be sent to this person.")
+            continue
+        email_address=result[0]        
         member_name=info["name"]
         books=info["books"]
         index+=1
 
         print(f"Drafting email to {member_name}...")
         send_mail(to=email_address, subject=subject_line, body=mail_body(member_name, books, case=case))
+        # Displays the ENTER delayer until the very last entry, in which case the main while loop delayer takes over
         if index < len(grouped_members):
             input("Press Enter to draft the next email...")

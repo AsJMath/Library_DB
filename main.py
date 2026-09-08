@@ -1,12 +1,14 @@
 # FILES
-from db import connect, cr
+from db import connect, cr, quit
 # import db automatically runs the db file and create database is called
 from books import add_books, delete_book, current_borrower, query_books_by_genre, query_books_by_name, book_exists, issued_books, due_today_books, overdue_books
-from members import add_members, active_members, is_active_member, pay_membership
+from members import add_members, active_members, is_active_member, pay_membership, query_member_name
 from constants import intro_message, cellstyle, tier_info, credits_message
 from transactions import issue_book, settle_fines, return_book, pending_fines
 from graphing import top_ten_books, top_ten_members, membership_chart, genre_chart, revenue_source_chart
-from mailer import draft_group_emails
+import mailer # for draft_group_email function
+
+# TODO: how to handle cases where the inputted values are out of range?
 
 # MODULES
 from tabulate import tabulate
@@ -129,11 +131,13 @@ Enter the method of search: """)
     # Book Info    
     elif num_choice==9:
         while True:
-            query_books_by_name()
+            matches, choices, book_ids = query_books_by_name(active_only=False)
             print()
             book_id = int(input("Enter the book id to view or enter 0 to search again: "))
             if book_id==0:
                 continue
+            elif book_id not in book_ids:
+                print("Please enter a book id from the above list.")
             else:
                 break
 
@@ -172,8 +176,17 @@ Due: {result[2]}""")
 
     # Member Info
     elif num_choice==10:
-        member_id=int(input("Enter the member id: "))
-
+        while True:
+            matches, choices, member_ids = query_member_name()
+            print()
+            member_id = int(input("Enter the member id to view or enter 0 to search again: "))
+            if member_id==0:
+                continue
+            elif member_id not in member_ids:
+                print("Please enter a member id frmo the above list.")
+            else:
+                break
+        
         # name
         cr.execute("select member_name from members where member_id=%s",(member_id,))
         name=cr.fetchone()[0]
@@ -264,7 +277,7 @@ Due: {result[2]}""")
 
             mail_due_choice=input("Enter to send an email to all the members (y/n): ").lower()
             if mail_due_choice.startswith("y"):
-                draft_group_emails(due_today_list, "Books Due Today", case="due today")    
+                mailer.draft_group_emails(due_today_list, "Books Due Today", case="due today")    
 
     # Overdue Books
     elif num_choice==15:
@@ -280,7 +293,7 @@ Due: {result[2]}""")
 
             mail_overdue_choice=input("Enter to send an email to all the members (y/n): ").lower()
             if mail_overdue_choice.startswith("y"):
-                draft_group_emails(overdue_books_list, "Overdue Books Notice", case="overdue")
+                mailer.draft_group_emails(overdue_books_list, "Overdue Books Notice", case="overdue")
 
     # Tier Information - Tabulated data comparing the tiers
     elif num_choice==16:
@@ -304,13 +317,11 @@ Due: {result[2]}""")
 
     # Exits program closes the cursor, connection and breaks the loop
     elif num_choice==22:
-        print("Exiting program...")
-        cr.close()
-        connect.close()
-        run=False
+        quit(run_variable=run)
         break
 
-    # Custom Query (depreciate)
+    # TODO: Depriciate
+    # Custom Query
     elif num_choice==23:
         query=input("Enter your custom SELECT query: ")
         if query.strip().lower().startswith("select"):
@@ -328,7 +339,8 @@ Due: {result[2]}""")
         else:
             print("Only SELECT statements are allowed for safety.")
 
-    # Database Schema (depreciate)
+    #TODO: Depriciate
+    # Database Schema
     elif num_choice==24:
         cr.execute("show tables")
         tables = cr.fetchall()
@@ -345,3 +357,5 @@ Due: {result[2]}""")
     # A break before the loop continues to ensure readability in the CLI 
     if num_choice != 22:
         input("\nPress Enter to continue...")
+
+#TODO: Try entire while loop in try statement and except block as KeyboardInterrupt, in which case, end the program 

@@ -1,7 +1,11 @@
 # FILES
 from db import connect, cr
-from constants import tier_prices, membership_duration
+from constants import tier_prices, membership_duration, cellstyle
 from dates import add_date
+
+# MODULES
+from rapidfuzz import process, fuzz
+from tabulate import tabulate
 
 # Adding new members to the members table
 def add_members():
@@ -28,7 +32,16 @@ def is_active_member(member_id):
 
 # Allows to pay for a membership, extending an old one or starting a new one afresh
 def pay_membership():
-    member_id=int(input("Enter the member id: "))
+    while True:
+        matches, choices, member_ids = query_member_name()
+        print()
+        member_id = int(input("Enter the member id or enter 0 to search again: "))
+        if member_id==0:
+            continue
+        elif member_id not in member_ids:
+            print("Please enter a member id from the above list.")
+        else:
+            break
 
     # Ensures that only the four valid tiers are selected
     while True:
@@ -50,7 +63,7 @@ def pay_membership():
         # The member has no history of memberships with the library
         start_date = today
     else:
-        # The member has a history of memberships with the library
+        # The member has a history of memberships with the library (dates ambiguous; deciphered below)
         existing_expiry = result[0].strftime("%Y-%m-%d")
         if existing_expiry > today: # expires in the future, later than today, meaning new membership will be active in future
             start_date = existing_expiry
@@ -68,3 +81,44 @@ def pay_membership():
 def no_of_books_issued_to(member_id):
     cr.execute("select count(*) from transactions where member_id=%s and return_date is null", (member_id,))
     return cr.fetchone()[0]
+
+def query_member_name():
+    query=input("Enter the member name: ")
+
+    if len(query) < 5:
+        print("Please enter at least 5 characters to search.")
+        return [], {} # satisfies the return matches, choices for consistency irrespective of which return gets triggered.
+
+    cr.execute("select member_id, member_name, email_address from members")
+    all_members=cr.fetchall()
+
+    choices={}    
+    for record in all_members:
+        member_name=record[1]
+        choices[member_name]=record
+        # choices is a dictionary of key value pairs with each key being the member name (what the rapidfuzz algorithm searches) and the corresponding value being a tuple (<member_id>, <member_name>, <email_address>)
+
+        # each key that the rapidfuzz algorithm searches for (a string) is linked to the actual data from the database, the book (book_name) and its details (book_id and author_name)
+
+    matches=process.extract(query, choices.keys(), limit=5, score_cutoff=60, scorer=fuzz.partial_ratio)
+    # .extract(<the string to be searched for, <what to search in>, <how many results to show>, <requires a minimum match of how much %>, <the logic or scorer used for computation>)
+    # scorer=fuzz.partial_ratio finds the best matching substring within each key, rather than comparing the full strings —
+
+    # matches is a list of tuples, with each tuple of the format (<key from choices>, <likelihood of a match out of 100>, <index in the choices dictionary>)
+    print()
+    if not matches:
+        print("No such members found.")
+    else:
+        rows=[]
+        member_ids=[]
+        for match_str, score, index in matches:
+            record=choices[match_str] # For each matched string, find the member information tuple that corresponds to the member_name
+            member_id=record[0]
+            rows.append(record)
+            member_ids.append(member_id)
+
+        print(tabulate(rows, headers=["Member ID", "Member Name", "Email Address"], tablefmt=cellstyle))
+    
+    return matches, choices, member_ids
+# TODO: to prevent erraneous values from outside the search result, function should return book ids as well and the caller should be able to check if the user-inputted id is within the search function and not random
+# TODO: callback methods to see the entire books and members should also be made available incase search results are inconsistent.
