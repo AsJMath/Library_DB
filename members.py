@@ -32,24 +32,27 @@ def is_active_member(member_id):
 
 # Allows to pay for a membership, extending an old one or starting a new one afresh
 def pay_membership():
-    while True:
-        matches, choices, member_ids = query_member_name()
-        print()
-        member_id = int(input("Enter the member id or enter 0 to search again: "))
-        if member_id==0:
-            continue
-        elif member_id not in member_ids:
-            print("Please enter a member id from the above list.")
-        else:
-            break
+    matches, choices, member_ids = query_by_member_name()
+    print()
 
-    # Ensures that only the four valid tiers are selected
-    while True:
-        tier = input("Enter tier (bronze/silver/gold/student): ").lower()
-        if tier in tier_prices:
-            break
-        else:
-            print("Invalid tier. Choose from: bronze, silver, gold, student.")
+    if not matches:
+        return  # query_by_member_name() already printed "No such members found."
+
+    member_id_input = input("Enter the member id: ")
+    try:
+        member_id = int(member_id_input)
+    except ValueError:
+        print("Invalid input. No membership was recorded.")
+        return
+
+    if member_id not in member_ids:
+        print("Please enter a member id from the search results. No membership was recorded.")
+        return
+
+    tier = input("Enter tier (bronze/silver/gold/student): ").lower()
+    if tier not in tier_prices:
+        print("Invalid tier. Choose from: bronze, silver, gold, student. No membership was recorded.")
+        return
 
     amount = tier_prices[tier]
     cr.execute("select curdate()")
@@ -76,13 +79,13 @@ def pay_membership():
     connect.commit()
 
     print(f"Membership ({tier}) recorded. Amount: Rs.{amount}. Valid until: {expiry_date}.")
-
+    
 # Uses aggregate function count(*) to count the number of books that are issued and not returned to a particular member of known member id, i.e the number of books the member has at the moment
 def no_of_books_issued_to(member_id):
     cr.execute("select count(*) from transactions where member_id=%s and return_date is null", (member_id,))
     return cr.fetchone()[0]
 
-def query_member_name():
+def query_by_member_name():
     query=input("Enter the member name: ")
 
     if len(query) < 5:
@@ -108,6 +111,7 @@ def query_member_name():
     print()
     if not matches:
         print("No such members found.")
+        return [], {}, []
     else:
         rows=[]
         member_ids=[]
@@ -118,7 +122,4 @@ def query_member_name():
             member_ids.append(member_id)
 
         print(tabulate(rows, headers=["Member ID", "Member Name", "Email Address"], tablefmt=cellstyle))
-    
-    return matches, choices, member_ids
-# TODO: to prevent erraneous values from outside the search result, function should return book ids as well and the caller should be able to check if the user-inputted id is within the search function and not random
-# TODO: callback methods to see the entire books and members should also be made available incase search results are inconsistent.
+        return matches, choices, member_ids

@@ -66,16 +66,15 @@ def add_books():
                     if record[0] == pick: # record[0] is the book id from the choices.values() dictionary of tuple values
                         matched_record=record
                         break
+                is_active=matched_record[3] # matched_record[3] is the active status of the record if matched.
+                if is_active:
+                    print(f"'{matched_record[1]}' already exists in the active catalog. No changes made.")
+                    return
                 else:
-                    is_active=matched_record[3] # matched_record[3] is the active status of the record if matched.
-                    if is_active:
-                        print(f"'{matched_record[1]}' already exists in the active catalog. No changes made.")
-                        return
-                    else:
-                        cr.execute("update books set active=1 where book_id=%s", (pick,))
-                        connect.commit()
-                        print("Book restored to the active catalog.")
-                        return
+                    cr.execute("update books set active=1 where book_id=%s", (pick,))
+                    connect.commit()
+                    print("Book restored to the active catalog.")
+                    return
 
     print("Adding as a new book...")
     publication_date=input("Enter the date of publication in YYYY-MM-DD: ")
@@ -138,6 +137,7 @@ def query_books_by_name(active_only=True, query=None):
     print()
     if not matches:
         print("No existing books found.")
+        return [], {}, []
     else:
         rows=[]
         book_ids=[]
@@ -148,7 +148,7 @@ def query_books_by_name(active_only=True, query=None):
             book_ids.append(book_id)
 
         print(tabulate(rows, headers=["Book ID", "Book Name", "Author Name"], tablefmt=cellstyle))
-    return matches, choices, book_ids
+        return matches, choices, book_ids
 
 def query_books_by_genre():
     query=input("Enter the genre: ")
@@ -177,27 +177,33 @@ def query_books_by_genre():
 
 # Deletion of books from the database is directly difficult because records in the transaction table referencing the book_id as foreign key may exist
 def delete_book():
-    # Allows for a search function to determine the book id until the desired book is located
-    while True:
-        matches, choices, book_ids = query_books_by_name()
-        print()
-        book_id = int(input("Enter the book id to delete or enter 0 to seach again: "))
-        if book_id==0:
-            continue
-        elif book_id not in book_ids:
-            print("Please enter a book id from the above list.")
-        elif is_available(book_id):
-            # book is available i.e. is in the library and can be deleted (thus proceed)
-            break
-        else:
-            borrower=current_borrower(book_id)
-            if borrower is None:
-                print("This book's status is inconsistent and no active transaction is found.")
-                continue
-            else:
-                due_date=borrower[2]
-                print(f"This book is out of the library, expected to be returned on {due_date} and cannot be deleted yet.")
+    matches, choices, book_ids = query_books_by_name()
+    print()
 
+    if not matches:
+        return  # query_books_by_name() already printed "No existing books found."
+
+    book_id_input = input("Enter the book id to delete: ")
+    try:
+        book_id = int(book_id_input)
+    except ValueError:
+        print("Invalid input. No book was deleted.")
+        return
+
+    if book_id not in book_ids:
+        print("Please enter a book id from the search results. No book was deleted.")
+        return
+
+    if not is_available(book_id):
+        borrower=current_borrower(book_id)
+        if borrower is None:
+            print("This book's status is inconsistent and no active transaction is found. No book was deleted.")
+        else:
+            due_date=borrower[2]
+            print(f"This book is out of the library, expected to be returned on {due_date}. No book was deleted.")
+        return
+
+    # book is available i.e. is in the library and can be deleted (thus proceed to delete the book)
     cr.execute("update books set active=0 where book_id=%s", (book_id,))
     connect.commit()
     print("Book has been removed from the catalog.")

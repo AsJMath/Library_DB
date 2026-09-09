@@ -1,7 +1,7 @@
 # FILES
 from db import connect, cr
 from books import is_available, query_books_by_name, book_exists, current_borrower, issued_books
-from members import is_active_member, no_of_books_issued_to, query_member_name
+from members import is_active_member, no_of_books_issued_to, query_by_member_name
 from dates import is_late, add_date
 from constants import max_books, loan_period, fines, cellstyle
 
@@ -9,31 +9,45 @@ from constants import max_books, loan_period, fines, cellstyle
 from tabulate import tabulate
 
 def issue_book():
-    # Allows the librarian to search for the book and identify which one to issue based on generic search
-    while True:
-        matches, choices, book_ids = query_books_by_name()
-        print()
-        book_id = int(input("Enter the book id to issue or enter 0 to seach again: "))
-        if book_id==0:
-            continue
-        elif book_id not in book_ids:
-            print("Please enter a book id from the above list.")
-        elif not is_available(book_id):
-            print("This book is out of the library and cannot be issued.")
-        else:
-            # book exists and is available (thus proceed)
-            break
+    # Allows the librarian to search for the book to issue
+    matches, choices, book_ids = query_books_by_name()
+    print()
 
-    while True:
-        matches, choices, member_ids = query_member_name()
-        print()
-        member_id = int(input("Enter the member id or enter 0 to search again: "))
-        if member_id==0:
-            continue
-        if member_id not in member_ids:
-            print("Enter a member id from the search result.")
-        else:
-            break
+    if not matches:
+        return  # query_books_by_name() already printed "No existing books found."
+
+    book_id_input = input("Enter the book id to issue: ")
+    try:
+        book_id = int(book_id_input)
+    except ValueError:
+        print("Invalid input. No book was issued.")
+        return
+
+    if book_id not in book_ids:
+        print("Please enter a book id from the search results. No book was issued.")
+        return
+
+    if not is_available(book_id):
+        print("This book is out of the library and cannot be issued.")
+        return
+
+    # book exists and is available (thus proceed)
+    matches, choices, member_ids = query_by_member_name()
+    print()
+
+    if not matches:
+        return  # query_by_member_name() already printed "No such members found."
+
+    member_id_input = input("Enter the member id: ")
+    try:
+        member_id = int(member_id_input)
+    except ValueError:
+        print("Invalid input. No book was issued.")
+        return
+
+    if member_id not in member_ids:
+        print("Please enter a member id from the search results. No book was issued.")
+        return
 
     # Checks if the member has an active membership
     member_tier = is_active_member(member_id)
@@ -43,7 +57,7 @@ def issue_book():
     else:
         print(f"Member has a active {member_tier} membership and has taken {no_of_books_issued_to(member_id)} out of the permitted {max_books[member_tier]} books.")
 
-    # If the member is has an active membership, check if the member has exceeded their limit on issuing books
+    # If the member has an active membership, check if the member has exceeded their limit on issuing books
     books_currently_issued = no_of_books_issued_to(member_id)
     if books_currently_issued >= max_books[member_tier]:
         print(f"This member has reached their {member_tier} tier limit of {max_books[member_tier]} books. Return a book before issuing another.")
@@ -73,14 +87,17 @@ def return_book():
     print("Issued books:")
     print(tabulate(issued_books_list, headers=headers, tablefmt=cellstyle))
 
-    while True:
-        print()
-        transaction_id = int(input("Enter the transaction id to return: "))
-        if transaction_id not in transaction_ids:
-            print("Please enter a transaction id from the list above.")
-        else:
-            break         
-           
+    transaction_id_input = input("Enter the transaction id to return: ")
+    try:
+        transaction_id = int(transaction_id_input)
+    except ValueError:
+        print("Invalid input. No book was returned.")
+        return
+
+    if transaction_id not in transaction_ids:
+        print("Please enter a transaction id from the list above. No book was returned.")
+        return
+
     # Finds the transaction where that particular book was issued and not returned
     cr.execute("select due_date, issue_date, book_id from transactions where transaction_id=%s and return_date is null", (transaction_id,))
     result=cr.fetchone()
@@ -127,18 +144,24 @@ def return_book():
             break
         else:
             print("Invalid input, enter (y/n) only.")
-
+            
 def settle_fines():
-    while True:
-        matches, choices, member_ids = query_member_name()
-        print()
-        member_id = int(input("Enter the member id or enter 0 to search again: "))
-        if member_id==0:
-            continue
-        elif member_id not in member_ids:
-            print("Please enter a member id from the list above.")
-        else:
-            break
+    matches, choices, member_ids = query_by_member_name()
+    print()
+
+    if not matches:
+        return  # query_by_member_name() already printed "No such members found."
+
+    member_id_input = input("Enter the member id: ")
+    try:
+        member_id = int(member_id_input)
+    except ValueError:
+        print("Invalid input. No fines were settled.")
+        return
+
+    if member_id not in member_ids:
+        print("Please enter a member id from the search results. No fines were settled.")
+        return
 
     # Finds all the pending fines for a particular member
     cr.execute("select fine_id, fine_type, amount, book_name, return_date from transactions, fines, books where books.book_id=transactions.book_id and fines.transaction_id=transactions.transaction_id and paid=0 and transactions.member_id=%s", (member_id,))
@@ -174,7 +197,7 @@ def settle_fines():
             print("Invalid fine ID for this member, or already paid.")
         else:
             print("Fine settled.")
-
+            
 def pending_fines():
         cr.execute("select fine_id, member_name, book_name, fine_type, amount from fines, transactions, members, books where paid=0 and members.member_id=transactions.member_id and transactions.transaction_id=fines.transaction_id and transactions.book_id=books.book_id")
         pending_fines_list=cr.fetchall()

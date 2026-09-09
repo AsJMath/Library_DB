@@ -38,7 +38,9 @@ membership_duration = 300  # ~10 months
 intro_message="""
 **************************************************    
 *****WELCOME TO THE LIBRARY MANAGEMENT SYSTEM*****
-**************************************************      
+************************************************** 
+
+Press Ctrl+C any time during the program to quit.
 """
 
 credits_message="""

@@ -7,7 +7,11 @@ import matplotlib.pyplot as plt
 import textwrap
 
 def pie_chart(fractions_sequence, label_sequence, color_list=None, title=None, explode_sequence=None):
-    plt.pie(fractions_sequence, labels=label_sequence, autopct='%1.1f%%', startangle=90, pctdistance=0.85, labeldistance=1.1, colors=color_list, explode=explode_sequence)
+    try: # If no data is present in tables, plt.pie raises an exception ValueError: All wedge sizes are zero
+        plt.pie(fractions_sequence, labels=label_sequence, autopct='%1.1f%%', startangle=90, pctdistance=0.85, labeldistance=1.1, colors=color_list, explode=explode_sequence)
+    except:
+        print("Unable to provide chart.")
+        return
     plt.title(title)
     plt.tight_layout()
     plt.show()
