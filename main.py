@@ -1,5 +1,5 @@
 # FILES
-from db import connect, cr, quit
+from db import cr, quit #, connect
 # import db automatically runs the db file and create database is called
 from books import add_books, delete_book, current_borrower, query_books_by_genre, query_books_by_name, book_exists, issued_books, due_today_books, overdue_books
 from members import add_members, active_members, is_active_member, pay_membership, query_by_member_name
@@ -19,7 +19,7 @@ is_members_present=cr.fetchall()
 print(intro_message)
 run=True
 try:
-    while run:   
+    while run:
         # Indicator System
         pending_fines_list = pending_fines()
         issued_books_list = issued_books()
@@ -44,7 +44,7 @@ $ Actions
 7. Pay Membership
 
 $ Information
-8. Generic Search - Search books by book, author or genre      
+8. Generic Search - Search books by book, author or genre
 9. Book Info - Information about the book, current borrower and its transaction history
 10. Member Info - Information about the member, membership status and their transaction history
 11. Membership Info - Information about all members and their membership status
@@ -65,10 +65,10 @@ $ Charts
 24. Exit
 
 $ Advanced
-25. Custom Query - Enter your own custom SELECT query          
-26. See Database Schema                  
+25. Custom Query - Enter your own custom SELECT query
+26. See Database Schema
 """)
-        
+
         num_choice=input("Enter the number: ")
         if num_choice=="credits":
             print(credits_message)
@@ -134,18 +134,24 @@ $ Advanced
                 if show_chart.startswith("y"):
                     genre_chart(target_genre)
 
-        # Book Info    
+        # Book Info
         elif num_choice==9 and is_books_present:
-            while True:
-                matches, choices, book_ids = query_books_by_name(active_only=False)
-                print()
-                book_id = int(input("Enter the book id to view or enter 0 to search again: "))
-                if book_id==0:
-                    continue
-                elif book_id not in book_ids:
-                    print("Please enter a book id from the above list.")
-                else:
-                    break
+            matches, choices, book_ids = query_books_by_name(active_only=False)
+            print()
+
+            if not matches:
+                continue
+
+            book_id_input = input("Enter the book id to view: ")
+            try:
+                book_id = int(book_id_input)
+            except ValueError:
+                print("Invalid input.")
+                continue
+
+            if book_id not in book_ids:
+                print("Please enter a book id from the search results.")
+                continue
 
             # name
             cr.execute("select book_name from books where book_id=%s",(book_id,))
@@ -163,10 +169,10 @@ $ Advanced
                 result=current_borrower(book_id)
                 if result:
                     print(f"""
-    Current Borrower
-    Member id: {result[0]}
-    Member name: {result[1]}
-    Due: {result[2]}""")
+Current Borrower
+Member id: {result[0]}
+Member name: {result[1]}
+Due: {result[2]}""")
                 else:
                     print("The book is not currently borrowed.")
 
@@ -182,17 +188,23 @@ $ Advanced
 
         # Member Info
         elif num_choice==10 and is_members_present:
-            while True:
-                matches, choices, member_ids = query_by_member_name()
-                print()
-                member_id = int(input("Enter the member id to view or enter 0 to search again: "))
-                if member_id==0:
-                    continue
-                elif member_id not in member_ids:
-                    print("Please enter a member id frmo the above list.")
-                else:
-                    break
-            
+            matches, choices, member_ids = query_by_member_name()
+            print()
+
+            if not matches:
+                continue
+
+            member_id_input = input("Enter the member id to view: ")
+            try:
+                member_id = int(member_id_input)
+            except ValueError:
+                print("Invalid input.")
+                continue
+
+            if member_id not in member_ids:
+                print("Please enter a member id from the search results.")
+                continue
+
             # name
             cr.execute("select member_name from members where member_id=%s",(member_id,))
             name=cr.fetchone()[0]
@@ -209,10 +221,9 @@ $ Advanced
                 print(tabulate(transaction_history, headers=headers, tablefmt=cellstyle))
             else:
                 print("No existing transactions.")
-            
+
             print()
 
-            
             cr.execute("select payment_id, tier, payment_date, coverage_start, expiry_date from membership_payments where member_id=%s", (member_id, ))
             membership_history=cr.fetchall()
             if membership_history:
@@ -221,7 +232,7 @@ $ Advanced
                 print(tabulate(membership_history, headers=headers, tablefmt=cellstyle))
             else:
                 print("No existing membership history.")
-            
+
         # Membership Info
         elif num_choice==11 and is_members_present:
             active_membership_info = active_members() # returns list of all (member_id, tier, expiry_date)
@@ -290,7 +301,7 @@ $ Advanced
 
                 mail_due_choice=input("Enter to send an email to all the members (y/n): ").lower()
                 if mail_due_choice.startswith("y"):
-                    mailer.draft_group_emails(due_today_list, "Books Due Today", case="due today")    
+                    mailer.draft_group_emails(due_today_list, "Books Due Today", case="due today")
 
         # Overdue Books
         elif num_choice==15 and is_books_present and is_members_present:
@@ -300,7 +311,7 @@ $ Advanced
                 cr.execute("select curdate()")
                 print("Today:", cr.fetchone()[0].strftime("%Y-%m-%d"))
 
-                headers=["Transaction ID", "Book Name", "Member ID", "Member Name", "Due Date", "Days Delayed"]            
+                headers=["Transaction ID", "Book Name", "Member ID", "Member Name", "Due Date", "Days Delayed"]
                 print("Overdue books:")
                 print(tabulate(overdue_books_list, headers=headers, tablefmt=cellstyle))
 
@@ -377,7 +388,7 @@ $ Advanced
         elif num_choice==26:
             cr.execute("show tables")
             tables = cr.fetchall()
-                    
+
             for table in tables:
                 table_name = table[0]
                 print()
@@ -395,8 +406,8 @@ $ Advanced
 
         if not is_members_present and not is_books_present:
             print("Some functions cannot be accessed without adding books and members.")
-        
-        # A break before the loop continues to ensure readability in the CLI 
+
+        # A break before the loop continues to ensure readability in the CLI
         if num_choice != 24:
             input("\nPress Enter to continue...")
 

@@ -87,6 +87,7 @@ def add_books():
     print("New book added.")
 
 # Generic Search using rapidfuzz module
+# TODO: Depreciate
 def generic_search():
     while True:
         method=input("""
