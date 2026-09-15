@@ -11,13 +11,18 @@ import mailer # for draft_group_email function
 # MODULES
 from tabulate import tabulate
 
-cr.execute("select * from books")
-is_books_present=cr.fetchall()
-cr.execute("select * from members")
-is_members_present=cr.fetchall()
+def refresh_presence_flags():
+    cr.execute("select 1 from books limit 1")
+    books_present = cr.fetchone() is not None
+    cr.execute("select 1 from members limit 1")
+    members_present = cr.fetchone() is not None
+    return books_present, members_present
+
+is_books_present, is_members_present = refresh_presence_flags()
 
 print(intro_message)
 run=True
+# Entire program is wrapped in try-except to allow for Keyboard Interrupt
 try:
     while run:
         # Indicator System
@@ -70,7 +75,7 @@ $ Advanced
 """)
 
         num_choice=input("Enter the number: ")
-        if num_choice=="credits":
+        if num_choice=="who made this":
             print(credits_message)
             input("\nPress Enter to continue...")
             continue
@@ -83,16 +88,19 @@ $ Advanced
             continue # forces the next iteration of the loop
 
         if num_choice not in range(1,27):
-            print("Try again with a number from 1 to 24")
+            print("Try again with a number from 1 to 26")
 
         elif num_choice==1:
             add_books()
+            is_books_present, is_members_present = refresh_presence_flags()
 
         elif num_choice==2 and is_books_present:
             delete_book()
+            is_books_present, is_members_present = refresh_presence_flags()
 
         elif num_choice==3:
             add_members()
+            is_books_present, is_members_present = refresh_presence_flags()
 
         elif num_choice==4 and is_books_present and is_members_present:
             issue_book()
@@ -110,10 +118,10 @@ $ Advanced
             # while loop handles stray values for the method input
             while True:
                 method=input("""
-    Available Methods of Search
-    1. Title/Author
-    2. Genre
-    Enter the method of search: """)
+Available Methods of Search
+1. Title/Author
+2. Genre
+Enter the method of search: """)
                 try:
                     method=int(method)
                 except ValueError:
@@ -399,13 +407,13 @@ Due: {result[2]}""")
                     print(f" {col[0]} ({col[1]})")
 
         if not is_books_present and is_members_present:
-            print("Some functions cannot be accessed without adding books.")
+            print("\nSome functions cannot be accessed without adding books.")
 
         if not is_members_present and is_books_present:
-            print("Some functions cannot be accessed without adding members.")
+            print("\nSome functions cannot be accessed without adding members.")
 
         if not is_members_present and not is_books_present:
-            print("Some functions cannot be accessed without adding books and members.")
+            print("\nSome functions cannot be accessed without adding books and members.")
 
         # A break before the loop continues to ensure readability in the CLI
         if num_choice != 24:

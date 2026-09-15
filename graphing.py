@@ -17,6 +17,9 @@ def pie_chart(fractions_sequence, label_sequence, color_list=None, title=None, e
     plt.show()
  
 def plot_top_ten(labels, values, xlabel, ylabel, title):
+    if not labels:
+        print("No data available for this chart yet.")
+        return
     wrapped_labels = []
     for name in labels:
         wrapped_labels.append(textwrap.fill(name, width=12))
@@ -96,7 +99,7 @@ def membership_chart():
 # Generates a particular piechart with the parameter target_genre exploded
 # Default value none allows for situation where no genre is generated
 def genre_chart(target_genre=None):
-    cr.execute("select distinct genre from books")
+    cr.execute("select distinct genre from books where active=1")
     result=cr.fetchall()
     all_genres=dict()
     for row in result:

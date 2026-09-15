@@ -9,6 +9,11 @@ from constants import max_books, loan_period, fines, cellstyle
 from tabulate import tabulate
 
 def issue_book():
+    cr.execute("select 1 from books where active=1 limit 1")
+    if cr.fetchone() is None:
+        print("No active books available to issue.")
+        return
+
     # Allows the librarian to search for the book to issue
     matches, choices, book_ids = query_books_by_name()
     print()
@@ -74,7 +79,6 @@ def issue_book():
 
 def return_book():
     issued_books_list=issued_books()
-
     if not issued_books_list:
         print("No books are currently issued.")
         return

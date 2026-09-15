@@ -4,25 +4,40 @@ from constants import mysqlpassword
 # MODULES
 import mysql.connector as ms
 
-def create_and_seed_database():
-    temp_conn = ms.connect(host="localhost", user="root", password=mysqlpassword)
-    temp_cr = temp_conn.cursor()
+def get_connection():
+    return ms.connect(host="localhost", user="root", password=mysqlpassword)
 
-    temp_cr.execute("create database if not exists library_db")
-    temp_cr.execute("use library_db")
-    temp_cr.execute("create table if not exists books (book_id int primary key auto_increment, book_name text, publication_date date, genre text, author_name text, active tinyint(1) default 1)")
-    temp_cr.execute("create table if not exists members (member_id int primary key auto_increment, member_name text, email_address varchar(255))")
-    temp_cr.execute("create table if not exists transactions (transaction_id int primary key auto_increment, book_id int, member_id int, issue_date date, return_date date, due_date date, foreign key (book_id) references books(book_id), foreign key (member_id) references members(member_id))")
-    temp_cr.execute("create table if not exists fines (fine_id int primary key auto_increment, transaction_id int, fine_type text, amount decimal(6,2), paid tinyint(1), foreign key (transaction_id) references transactions(transaction_id))")
-    temp_cr.execute("create table if not exists membership_payments (payment_id int primary key auto_increment, member_id int, tier text, amount decimal(6,2), payment_date date, coverage_start date, expiry_date date, foreign key (member_id) references members(member_id))")
+def create_database():
+    """Creates the database and tables if they don't already exist."""
+    conn = get_connection()
+    cr = conn.cursor()
 
-    temp_conn.commit()
-    temp_cr.execute("delete from fines")
-    temp_cr.execute("delete from membership_payments")
-    temp_cr.execute("delete from transactions")
-    temp_cr.execute("delete from members")
-    temp_cr.execute("delete from books")
-    temp_conn.commit()
+    cr.execute("create database if not exists library_db")
+    cr.execute("use library_db")
+    cr.execute("create table if not exists books (book_id int primary key auto_increment, book_name text, publication_date date, genre text, author_name text, active tinyint(1) default 1)")
+    cr.execute("create table if not exists members (member_id int primary key auto_increment, member_name text, email_address varchar(255))")
+    cr.execute("create table if not exists transactions (transaction_id int primary key auto_increment, book_id int, member_id int, issue_date date, return_date date, due_date date, foreign key (book_id) references books(book_id), foreign key (member_id) references members(member_id))")
+    cr.execute("create table if not exists fines (fine_id int primary key auto_increment, transaction_id int, fine_type text, amount decimal(6,2), paid tinyint(1), foreign key (transaction_id) references transactions(transaction_id))")
+    cr.execute("create table if not exists membership_payments (payment_id int primary key auto_increment, member_id int, tier text, amount decimal(6,2), payment_date date, coverage_start date, expiry_date date, foreign key (member_id) references members(member_id))")
+
+    conn.commit()
+    conn.close()
+    print("Database and tables created (or already existed).")
+
+
+def seed_database():
+    """Clears existing demo data and inserts fresh seed data."""
+    conn = get_connection()
+    cr = conn.cursor()
+    cr.execute("use library_db")
+
+    # clear existing data, respecting FK order
+    cr.execute("delete from fines")
+    cr.execute("delete from membership_payments")
+    cr.execute("delete from transactions")
+    cr.execute("delete from members")
+    cr.execute("delete from books")
+    conn.commit()
 
     books = [
         (1, "1984", "1949-06-08", "Dystopian", "George Orwell", 1),
@@ -66,10 +81,9 @@ def create_and_seed_database():
         (39, "Great Expectations", "1861-08-01", "Fiction", "Charles Dickens", 1),
         (40, "A Tale of Two Cities", "1859-04-30", "Historical", "Charles Dickens", 1),
     ]
-    temp_cr.executemany("insert into books values (%s, %s, %s, %s, %s, %s)", books)
-    temp_conn.commit()
+    cr.executemany("insert into books values (%s, %s, %s, %s, %s, %s)", books)
+    conn.commit()
 
-    # --- Members ---
     members = [
         (1, "Aditi Sharma", "aditi.sharma@example.com"),
         (2, "Rohan Mehta", "rohan.mehta@example.com"),
@@ -92,11 +106,9 @@ def create_and_seed_database():
         (19, "Dev Malhotra", "dev.malhotra@example.com"),
         (20, "Simran Kaur", "simran.kaur@example.com"),
     ]
-    temp_cr.executemany("insert into members values (%s, %s, %s)", members)
-    temp_conn.commit()
+    cr.executemany("insert into members values (%s, %s, %s)", members)
+    conn.commit()
 
-    # --- Transactions ---
-    # (transaction_id, book_id, member_id, issue_date, return_date, due_date)
     transactions = [
         (1, 1, 1, "2026-06-01", "2026-08-02", "2026-06-15"),
         (2, 3, 2, "2026-06-03", "2026-06-20", "2026-06-17"),
@@ -128,18 +140,14 @@ def create_and_seed_database():
         (28, 27, 15, "2026-06-19", "2026-07-05", "2026-07-03"),
         (29, 12, 17, "2026-06-27", "2026-07-03", "2026-07-11"),
         (30, 14, 16, "2026-06-27", "2026-07-08", "2026-07-11"),
-        (31, 8, 18, "2026-07-07", None, "2026-07-21"),
+        (31, 8, 18, "2026-07-07", None, "2026-09-15"),
         (32, 26, 11, "2026-07-15", "2026-08-02", "2026-07-29"),
-        (33, 35, 3, "2026-06-06", None, "2026-06-20"),
-        (34, 36, 3, "2026-06-04", None, "2026-06-18"),
+        (33, 35, 3, "2026-06-06", None, "2026-09-15"),
+        (34, 36, 3, "2026-06-04", None, "2026-09-15"),
     ]
-    temp_cr.executemany(
-        "insert into transactions values (%s, %s, %s, %s, %s, %s)", transactions
-    )
-    temp_conn.commit()
+    cr.executemany("insert into transactions values (%s, %s, %s, %s, %s, %s)", transactions)
+    conn.commit()
 
-    # --- Fines ---
-    # fine_id 3 intentionally skipped, matching the original demo data
     fines = [
         (1, 2, "late", 60.00, 0),
         (2, 4, "late", 20.00, 1),
@@ -161,14 +169,9 @@ def create_and_seed_database():
         (19, 34, "late", 20.00, 0),
         (20, 34, "damage", 700.00, 0),
     ]
-    temp_cr.executemany(
-        "insert into fines values (%s, %s, %s, %s, %s)", fines
-    )
-    temp_conn.commit()
+    cr.executemany("insert into fines values (%s, %s, %s, %s, %s)", fines)
+    conn.commit()
 
-    # --- Membership Payments ---
-    # today's date assumed as 2026-08-25 for these seed values
-    #
     # member 1: active bronze
     # member 2: active silver
     # member 3: active gold
@@ -185,12 +188,12 @@ def create_and_seed_database():
         (6, 6, "bronze", 100.00, "2025-09-01", "2025-09-01", "2026-06-28"),   # expired leg of chain
         (7, 6, "gold",   500.00, "2026-06-28", "2026-06-08", "2027-04-24"),   # active leg of chain (starts at prior expiry)
     ]
-    temp_cr.executemany(
-        "insert into membership_payments values (%s, %s, %s, %s, %s, %s, %s)", membership_payments
-    )
-    temp_conn.commit()
+    cr.executemany("insert into membership_payments values (%s, %s, %s, %s, %s, %s, %s)", membership_payments)
+    conn.commit()
 
-    print("Demo database created and seeded successfully.")
-    temp_conn.close()
+    print("Demo database seeded successfully.")
+    conn.close()
 
-create_and_seed_database()
+
+create_database()
+seed_database()
