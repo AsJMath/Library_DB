@@ -1,5 +1,18 @@
 # MODULES
 from datetime import datetime, timedelta
+import sys
+import time
+
+# A buffer before next print statements to prevent the CLI overflowing with text
+def buffer():
+    input("\nPress Enter to continue...")
+
+# Prints in a typewriter style; usage limited to single line print statements such as intro and outro
+def fancy_print(text, delay=0.01):
+    for char in text:
+        sys.stdout.write(char)
+        sys.stdout.flush()
+        time.sleep(delay)
 
 # Returns a new date in YYYY-MM-DD format after converting the original date to a date time object and incrementing it by a particular amount
 def add_date(original_date, increment):

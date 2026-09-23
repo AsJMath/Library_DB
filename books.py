@@ -86,31 +86,6 @@ def add_books():
     connect.commit()
     print("New book added.")
 
-# Generic Search using rapidfuzz module
-# TODO: Depreciate
-def generic_search():
-    while True:
-        method=input("""
-1. Title/Author
-2. Genre
-Enter the method of search: """)
-        try:
-            method=int(method)
-        except ValueError:
-            print("Enter either 1 or 2.")
-            continue
-
-        if method in range(1,3):
-            break
-        else:
-            print("Enter either 1 or 2.")
-
-    if method==1:
-        query_books_by_name()
-
-    elif method==2:
-        query_books_by_genre()
-
 def query_books_by_name(active_only=True, query=None):
     if query is None:
         query=input("Enter the book title or author: ")

@@ -44,11 +44,7 @@ Press Ctrl+C any time during the program to quit.
 """
 
 credits_message="""
-|===========================================|
-|Made By: Ashwin Joshi and Sharvil Rajan    |
-|                                           |
-|Tools: VSCode, Python, MySQL, matplotlib,  |
-|       rapidfuzz, textwrap, webbrowser,    |
-|       mysqlconnector, tabulate, datetime  |
-|===========================================|
+Made By: Ashwin Joshi Mathew and Sharvil Rajan
+Softwares: VSCode, Python, MySQL
+Modules: matplotlib, rapidfuzz, textwrap, webbrowser, mysqlconnector, tabulate, datetime, urllib.parse
 """

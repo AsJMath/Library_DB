@@ -1,7 +1,7 @@
 # FILES
 from db import connect, cr
 from constants import tier_prices, membership_duration, cellstyle
-from dates import add_date
+from utils import add_date
 
 # MODULES
 from rapidfuzz import process, fuzz

@@ -6,6 +6,7 @@ from members import add_members, active_members, is_active_member, pay_membershi
 from constants import intro_message, cellstyle, tier_info, credits_message
 from transactions import issue_book, settle_fines, return_book, pending_fines
 from graphing import top_ten_books, top_ten_members, membership_chart, genre_chart, revenue_source_chart
+from utils import fancy_print, buffer
 import mailer # for draft_group_email function
 
 # MODULES
@@ -20,7 +21,8 @@ def refresh_presence_flags():
 
 is_books_present, is_members_present = refresh_presence_flags()
 
-print(intro_message)
+fancy_print(intro_message)
+buffer()
 run=True
 # Entire program is wrapped in try-except to allow for Keyboard Interrupt
 try:
@@ -76,19 +78,19 @@ $ Advanced
 
         num_choice=input("Enter the number: ")
         if num_choice=="who made this":
-            print(credits_message)
-            input("\nPress Enter to continue...")
+            fancy_print(credits_message)
+            buffer()
             continue
 
         # Handles stray values that are not integers or that are not within the valid ranges
         try:
             num_choice=int(num_choice)
         except ValueError:
-            print("Try Again!")
+            fancy_print("Try Again!")
             continue # forces the next iteration of the loop
 
         if num_choice not in range(1,27):
-            print("Try again with a number from 1 to 26")
+            fancy_print("Try again with a number from 1 to 26")
 
         elif num_choice==1:
             add_books()
@@ -372,7 +374,6 @@ Due: {result[2]}""")
             quit(run_variable=run)
             break
 
-        # TODO: Depriciate
         # Custom Query
         elif num_choice==25:
             query=input("Enter your custom SELECT query: ")
@@ -391,7 +392,6 @@ Due: {result[2]}""")
             else:
                 print("Only SELECT statements are allowed for safety.")
 
-        #TODO: Depriciate
         # Database Schema
         elif num_choice==26:
             cr.execute("show tables")
@@ -417,8 +417,8 @@ Due: {result[2]}""")
 
         # A break before the loop continues to ensure readability in the CLI
         if num_choice != 24:
-            input("\nPress Enter to continue...")
+            buffer()
 
 except KeyboardInterrupt:
-    print("\nKeyboard Interrupt detected.")
+    fancy_print("\nKeyboard Interrupt detected.")
     quit(run_variable=run)

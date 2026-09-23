@@ -2,7 +2,7 @@
 from db import connect, cr
 from books import is_available, query_books_by_name, book_exists, current_borrower, issued_books
 from members import is_active_member, no_of_books_issued_to, query_by_member_name
-from dates import is_late, add_date
+from utils import is_late, add_date
 from constants import max_books, loan_period, fines, cellstyle
 
 # MODULES

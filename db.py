@@ -1,5 +1,6 @@
 # FILES
 from constants import mysqlpassword
+from utils import fancy_print
 
 # MODULES
 import mysql.connector as ms
@@ -27,7 +28,7 @@ connect=ms.connect(host="localhost", user="root", password=mysqlpassword, databa
 cr=connect.cursor(dictionary=False) # Ensures that return results are tuples and not dictionaries
 
 def quit(run_variable):
-        print("Exiting program...")
+        fancy_print("Exiting program...")
         cr.close()
         connect.close()
         run_variable=False
