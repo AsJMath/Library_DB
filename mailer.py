@@ -98,6 +98,6 @@ def draft_group_emails(rows, subject_line, case):
 
         print(f"Drafting email to {member_name}...")
         send_mail(to=email_address, subject=subject_line, body=mail_body(member_name, books, case=case))
-        # Displays the ENTER delayer until the very last entry, in which case the main while loop delayer takes over
+        # Displays the ENTER delayer until the very last entry, in which case the main while loop buffer (buffer() function from utils.py) takes over
         if index < len(grouped_members):
             input("Press Enter to draft the next email...")
