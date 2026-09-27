@@ -420,5 +420,5 @@ Due: {result[2]}""")
             buffer()
 
 except KeyboardInterrupt:
-    fancy_print("\nKeyboard Interrupt detected.")
+    fancy_print("\nKeyboard Interrupt detected.\n")
     quit(run_variable=run)
