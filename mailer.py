@@ -1,5 +1,6 @@
 # FILES
 from db import cr
+from utils import fancy_print
 
 # MODULES
 import webbrowser
@@ -96,7 +97,7 @@ def draft_group_emails(rows, subject_line, case):
         books=info["books"]
         index+=1
 
-        print(f"Drafting email to {member_name}...")
+        fancy_print(f"Drafting email to {member_name}...\n")
         send_mail(to=email_address, subject=subject_line, body=mail_body(member_name, books, case=case))
         # Displays the ENTER delayer until the very last entry, in which case the main while loop buffer (buffer() function from utils.py) takes over
         if index < len(grouped_members):
