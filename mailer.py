@@ -1,6 +1,8 @@
+### mailer.py
+
 # FILES
-from db import cr
-from utils import fancy_print
+import db
+import utils
 
 # MODULES
 import webbrowser
@@ -87,8 +89,8 @@ def draft_group_emails(rows, subject_line, case):
 
     index=0
     for member_id, info in grouped_members.items():
-        cr.execute("select email_address from members where member_id=%s", (member_id,))
-        result=cr.fetchone()
+        db.cr.execute("select email_address from members where member_id=%s", (member_id,))
+        result=db.cr.fetchone()
         if result is None:
             print(f"No email on file for {info['name']}. Mail will not be sent to this person.")
             continue
@@ -97,7 +99,7 @@ def draft_group_emails(rows, subject_line, case):
         books=info["books"]
         index+=1
 
-        fancy_print(f"Drafting email to {member_name}...\n")
+        utils.fancy_print(f"Drafting email to {member_name}...")
         send_mail(to=email_address, subject=subject_line, body=mail_body(member_name, books, case=case))
         # Displays the ENTER delayer until the very last entry, in which case the main while loop buffer (buffer() function from utils.py) takes over
         if index < len(grouped_members):

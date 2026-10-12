@@ -1,10 +1,18 @@
+### graphing.py
+
 # FILES
-from db import cr
-from members import is_active_member
+import db
+import members
 
 # MODULES
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 import textwrap
+
+plt.rcParams["toolbar"]="None"
+
+def blank(x, y):
+    return ""
 
 def pie_chart(fractions_sequence, label_sequence, color_list=None, title=None, explode_sequence=None):
     try: # If no data is present in tables, plt.pie raises an exception ValueError: All wedge sizes are zero
@@ -12,9 +20,13 @@ def pie_chart(fractions_sequence, label_sequence, color_list=None, title=None, e
     except:
         print("Unable to provide chart.")
         return
-    plt.title(title)
+
+    manager=plt.gcf().canvas.manager # gcf=get current figure
+    manager.set_window_title(title)
+
     plt.tight_layout()
-    plt.show()
+    plt.show(block=True)
+    plt.close("all")
  
 def plot_top_ten(labels, values, xlabel, ylabel, title):
     if not labels:
@@ -28,26 +40,29 @@ def plot_top_ten(labels, values, xlabel, ylabel, title):
     wrapped_labels.reverse()
     values_reversed = values.copy()
     values_reversed.reverse()
- 
+
     plt.figure(figsize=(10, 6))
-    bars = plt.barh(wrapped_labels, values_reversed, color="skyblue")
-    plt.bar_label(bars, label_type="edge", color="white", padding=2)
+    bars = plt.barh(wrapped_labels, values_reversed, color="cornflowerblue")
+    plt.bar_label(bars, label_type="edge", color="black", padding=2)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    plt.title(title)
     plt.grid(axis="x", alpha=0.3)
 
-    manager=plt.gcf().canvas.manager
+    ax=plt.gca() #gca=get current axes
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    ax.format_coord = blank # Name of the function as an object without calling; ax.format_coord requires the function that matplotlib can call every time the mouse pointer moves over the plot. blank returns a blank value, ensuring nothing is displayed when hovering over it
+    
+    manager=plt.gcf().canvas.manager # gcf=get current figure
     manager.set_window_title(title)
 
-    plt.subplots_adjust(left=0.3)
     plt.tight_layout()
-    plt.show()
+    plt.show(block=True)
+    plt.close("all")
 
 # Doesn't consider if the book is active or not; relies on historical data and can be useful to the librarian to find out of the book should be reactivated
 def top_ten_books():
-    cr.execute("select books.book_name, count(transactions.transaction_id) from transactions, books where transactions.book_id=books.book_id group by books.book_id, books.book_name order by count(transactions.transaction_id) desc limit 10")
-    result = cr.fetchall()
+    db.cr.execute("select books.book_name, count(transactions.transaction_id) from transactions, books where transactions.book_id=books.book_id group by books.book_id, books.book_name order by count(transactions.transaction_id) desc limit 10")
+    result = db.cr.fetchall()
  
     labels = []
     values = []
@@ -58,8 +73,8 @@ def top_ten_books():
     plot_top_ten(labels, values, "Number of times issued", "Books", "Top 10 Books")
  
 def top_ten_members():
-    cr.execute("select members.member_name, count(transactions.transaction_id) from transactions, members where transactions.member_id=members.member_id group by members.member_id, members.member_name order by count(transactions.transaction_id) desc limit 10")
-    result = cr.fetchall()
+    db.cr.execute("select members.member_name, count(transactions.transaction_id) from transactions, members where transactions.member_id=members.member_id group by members.member_id, members.member_name order by count(transactions.transaction_id) desc limit 10")
+    result = db.cr.fetchall()
  
     labels = []
     values = []
@@ -70,8 +85,8 @@ def top_ten_members():
     plot_top_ten(labels, values, "Number of times issued", "Members", "Top 10 Members")
 
 def membership_chart():
-    cr.execute("select member_id from members")
-    member_ids=cr.fetchall() # List of tuples with one element
+    db.cr.execute("select member_id from members")
+    member_ids=db.cr.fetchall() # List of tuples with one element
 
     split = {
         "bronze": [],
@@ -83,7 +98,7 @@ def membership_chart():
 
     for row in member_ids:
         id=row[0]
-        tier=is_active_member(id) # Returns either a string or None
+        tier=members.is_active_member(id) # Returns either a string or None
         if tier is None:
             split["none"].append(id)
         else:
@@ -94,13 +109,13 @@ def membership_chart():
     for key in split:
         divisions.append(len(split[key])) # len(split[key]) gives the number of member ids for each tier
         tiers.append(key.capitalize())
-    pie_chart(divisions, tiers, color_list=["#CD7F32", "#C4C4C4", "#D4AF37", "#84A1DB", "#DE1818A4"], title="Membership Chart")
+    pie_chart(fractions_sequence=divisions, label_sequence=tiers, color_list=["#CD7F32", "#C4C4C4", "#D4AF37", "#84A1DB", "#DE1818A4"], title="Membership Chart")
 
 # Generates a particular piechart with the parameter target_genre exploded
 # Default value none allows for situation where no genre is generated
 def genre_chart(target_genre=None):
-    cr.execute("select distinct genre from books where active=1")
-    result=cr.fetchall()
+    db.cr.execute("select distinct genre from books where active=1")
+    result=db.cr.fetchall()
     all_genres=dict()
     for row in result:
         genre=row[0]
@@ -117,8 +132,8 @@ def genre_chart(target_genre=None):
         else:
             explode_list.append(0)
 
-    cr.execute("select book_id, genre from books where active=1")
-    result=cr.fetchall() # Nested tuple like ((<book_id>, <genre>),)
+    db.cr.execute("select book_id, genre from books where active=1")
+    result=db.cr.fetchall() # Nested tuple like ((<book_id>, <genre>),)
 
     for record in result:
         all_genres[record[1]]+=1
@@ -126,7 +141,7 @@ def genre_chart(target_genre=None):
 
     # Sequence of all the ratios of books in terms of their count
     divisions=all_genres.values()
-    pie_chart(divisions, genres, title="Genre Chart", explode_sequence=explode_list)
+    pie_chart(fractions_sequence=divisions, label_sequence=genres, title="Genre Chart", explode_sequence=explode_list)
 
 def revenue_source_chart():
     revenue_sources={
@@ -134,8 +149,8 @@ def revenue_source_chart():
         "membership": 0
     }
 
-    cr.execute("select sum(amount) from fines")
-    fines_total = cr.fetchone()[0]
+    db.cr.execute("select sum(amount) from fines")
+    fines_total = db.cr.fetchone()[0]
     
     # float() returns TypeError when encountering a NoneType
     if fines_total is None:
@@ -144,14 +159,14 @@ def revenue_source_chart():
     else:
         revenue_sources["fines"] = float(fines_total)
 
-    cr.execute("select sum(amount) from membership_payments")
-    membership_total = cr.fetchone()[0]
+    db.cr.execute("select sum(amount) from membership_payments")
+    membership_total = db.cr.fetchone()[0]
     # float() returns TypeError when encountering a NoneType
     if membership_total is None:
         # No rows in membership_payments table, sum() returned NULL
         revenue_sources["membership"] = 0.0
     else:
         revenue_sources["membership"] = float(membership_total)
-    # cr.fetchone() returns a nested tuple with one element, the sum of the amount
+    # db.cr.fetchone() returns a nested tuple with one element, the sum of the amount
 
     pie_chart(label_sequence=revenue_sources.keys(), fractions_sequence=revenue_sources.values(), title="Revenue Chart")

@@ -1,11 +1,13 @@
+### demo_setup.py
+
 # FILES
-from constants import mysqlpassword
+import constants
 
 # MODULES
 import mysql.connector as ms
 
 def get_connection():
-    return ms.connect(host="localhost", user="root", password=mysqlpassword)
+    return ms.connect(host="localhost", user="root", password=constants.mysqlpassword)
 
 def create_database():
     """Creates the database and tables if they don't already exist."""

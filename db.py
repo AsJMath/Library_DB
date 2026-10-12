@@ -1,13 +1,18 @@
+### db.py
+
 # FILES
-from constants import mysqlpassword
-from utils import fancy_print
+import constants
+import utils
 
 # MODULES
 import mysql.connector as ms
+import sys
+
+# HELPER FUNCTION
 
 # Sets up the database and the empty tables with correct names and fields of correct datatypes to begin library operations
 def create_database():
-    temp_conn = ms.connect(host="localhost", user="root", password=mysqlpassword)
+    temp_conn = ms.connect(host="localhost", user="root", password=constants.mysqlpassword)
     temp_cr = temp_conn.cursor()
 
     temp_cr.execute("create database if not exists library_db")
@@ -24,11 +29,24 @@ def create_database():
 # create_database() is called explicitly because when db.py is imported in main.py (like all imports), the file being imported is executed. None of the other files perform any visible actions when imported because their functions are not being called within the file, only externally.
 create_database()
 
-connect=ms.connect(host="localhost", user="root", password=mysqlpassword, database="library_db")
+connect=ms.connect(host="localhost", user="root", password=constants.mysqlpassword, database="library_db")
 cr=connect.cursor(dictionary=False) # Ensures that return results are tuples and not dictionaries
 
-def quit(run_variable):
-        fancy_print("Exiting program...")
-        cr.close()
-        connect.close()
-        run_variable=False
+def quit():
+    utils.fancy_print("Exiting program...")
+    cr.close()
+    connect.close()
+
+# USER FUNCTIONS
+
+def wipe_data():
+    utils.fancy_print("Clearing all data cannot be undone.\n")
+    confirm = input("Type 'DELETE EVERYTHING' (without quotes) to confirm: ")
+    if confirm == "DELETE EVERYTHING":
+        cr.execute("drop database library_db")
+        connect.commit()
+        utils.fancy_print("Database wiped. ", newline=False)
+        quit()
+        sys.exit()
+    else:
+        print("Wipe cancelled.")

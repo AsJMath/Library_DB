@@ -1,3 +1,5 @@
+### constants.py
+
 mysqlpassword=""
 
 cellstyle=["simple", "github", "grid", "fancy_grid", "pipe", "orgtbl"][3]
@@ -42,6 +44,8 @@ intro_message="""
 
 Press Ctrl+C any time during the program to quit.
 """
+
+indicator=" [!!]"
 
 credits_message="""
 Made By: Ashwin Joshi Mathew and Sharvil Rajan

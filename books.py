@@ -1,16 +1,18 @@
-# FILES
-from db import connect, cr
-from constants import cellstyle
+### books.py
 
+# FILES
+import db
+import constants
 # MODULES
 from rapidfuzz import process, fuzz
 from tabulate import tabulate
 
+# HELPER FUNCTIONS
 # For a given book id, checks if the book is within the library and is available for borrowing or deleting
 def is_available(book_id):
     # all books out of library and not available
-    cr.execute("select * from transactions where return_date is null")
-    issued_books = cr.fetchall()
+    db.cr.execute("select * from transactions where return_date is null")
+    issued_books = db.cr.fetchall()
     for record in issued_books:
         if book_id == record[1]:
             return False
@@ -18,8 +20,8 @@ def is_available(book_id):
 
 # Checks if the book is an active book (active=1) or not (active=0, meaning deleted)
 def book_exists(book_id):
-    cr.execute("select active from books where book_id=%s", (book_id,))
-    result = cr.fetchone()
+    db.cr.execute("select active from books where book_id=%s", (book_id,))
+    result = db.cr.fetchone()
     # Can be a non-zero nested tuple, can be a nested tuple with zero, can be a none object if book_id doesn't exist at all
     if result is None:
         return False  # handles: book_id doesn't exist at all
@@ -29,8 +31,8 @@ def book_exists(book_id):
 def current_borrower(book_id):
     # Checks that the book is actually in somebody's hands and not in the library
     if not is_available(book_id):
-        cr.execute("select members.member_id, member_name, due_date from members, transactions where members.member_id=transactions.member_id and return_date is null and book_id=%s", (book_id,))
-        result=cr.fetchone()
+        db.cr.execute("select members.member_id, member_name, due_date from members, transactions where members.member_id=transactions.member_id and return_date is null and book_id=%s", (book_id,))
+        result=db.cr.fetchone()
         if result is None:
             return None
         # returns (member_id, member_name, due_date)
@@ -40,8 +42,25 @@ def current_borrower(book_id):
         print("Book is in the library.")
         return None
 
+def issued_books():
+    db.cr.execute("select transaction_id, book_name, member_name, issue_date, due_date from books, members, transactions where return_date is null and transactions.book_id=books.book_id and transactions.member_id=members.member_id")
+    issued_books_list=db.cr.fetchall()
+    return issued_books_list
+
+def due_today_books():
+    db.cr.execute("select transaction_id, books.book_name, members.member_id, members.member_name, transactions.issue_date from books, members, transactions where return_date is null and due_date=curdate() and transactions.member_id=members.member_id and transactions.book_id=books.book_id")
+    due_today_list=db.cr.fetchall()
+    return due_today_list
+
+def overdue_books():
+    db.cr.execute("select transaction_id, book_name, members.member_id, members.member_name, due_date, datediff(curdate(), due_date) as days_delayed from books, members, transactions where return_date is null and due_date < curdate() and transactions.member_id=members.member_id and transactions.book_id=books.book_id")
+    overdue_books_list=db.cr.fetchall()
+    return overdue_books_list
+
+# USER FUNCTIONS
+
 # Adding new books into the library catalog
-def add_books():
+def add_book():
     book_name=input("Enter the book name: ")
     # Runs query_books_by_name, meaning matches, choices gets returned and unpacked alongside the printing of viable values
     matches, choices, book_ids = query_books_by_name(active_only=False, query=book_name)
@@ -71,19 +90,17 @@ def add_books():
                     print(f"'{matched_record[1]}' already exists in the active catalog. No changes made.")
                     return
                 else:
-                    cr.execute("update books set active=1 where book_id=%s", (pick,))
-                    connect.commit()
+                    db.cr.execute("update books set active=1 where book_id=%s", (pick,))
+                    db.connect.commit()
                     print("Book restored to the active catalog.")
                     return
 
-    print("Adding as a new book...")
     publication_date=input("Enter the date of publication in YYYY-MM-DD: ")
     genre=input("Enter the genre: ")
     author_name=input("Enter the name of the author: ")
 
-    cr.execute("insert into books (book_name, publication_date, genre, author_name, active) values (%s, %s, %s, %s, %s)", (book_name, publication_date, genre, author_name, 1))
-
-    connect.commit()
+    db.cr.execute("insert into books (book_name, publication_date, genre, author_name, active) values (%s, %s, %s, %s, %s)", (book_name, publication_date, genre, author_name, 1))
+    db.connect.commit()
     print("New book added.")
 
 def query_books_by_name(active_only=True, query=None):
@@ -92,13 +109,13 @@ def query_books_by_name(active_only=True, query=None):
 
     if len(query) < 5:
         print("Please enter at least 5 characters to search.")
-        return [], {} # satisfies the return matches, choices for consistency irrespective of which return gets triggered.
+        return [], {}, [] # satisfies the return matches, choices for consistency irrespective of which return gets triggered.
 
     if active_only:
-        cr.execute("select book_id, book_name, author_name from books where active=1")
+        db.cr.execute("select book_id, book_name, author_name from books where active=1")
     else:
-        cr.execute("select book_id, book_name, author_name, active from books")
-    all_books=cr.fetchall()
+        db.cr.execute("select book_id, book_name, author_name, active from books")
+    all_books=db.cr.fetchall()
 
     choices={}
     for record in all_books:
@@ -123,14 +140,14 @@ def query_books_by_name(active_only=True, query=None):
             rows.append([record[0], record[1], record[2]])  # only show ID, name, author  active status stays hidden from the table
             book_ids.append(book_id)
 
-        print(tabulate(rows, headers=["Book ID", "Book Name", "Author Name"], tablefmt=cellstyle))
+        print(tabulate(rows, headers=["Book ID", "Book Name", "Author Name"], tablefmt=constants.cellstyle))
         return matches, choices, book_ids
 
 def query_books_by_genre():
     query=input("Enter the genre: ")
 
-    cr.execute("select distinct genre from books")
-    genre_rows=cr.fetchall()
+    db.cr.execute("select distinct genre from books")
+    genre_rows=db.cr.fetchall()
     all_genres=[]
     for row in genre_rows:
         all_genres.append(row[0])
@@ -144,12 +161,56 @@ def query_books_by_genre():
         print("No matching genre found.")
     else:
         matched_genre=best_match[0]
-        cr.execute("select book_id, book_name, author_name, publication_date from books where genre=%s and active=1", (matched_genre, ))
-        result=cr.fetchall()
+        db.cr.execute("select book_id, book_name, author_name, publication_date from books where genre=%s and active=1", (matched_genre, ))
+        result=db.cr.fetchall()
         headers=["Book ID", "Book Name", "Author Name", "Publication Date"]
         print(f"Books in genre: {matched_genre}")
-        print(tabulate(result, headers=headers, tablefmt=cellstyle))
+        print(tabulate(result, headers=headers, tablefmt=constants.cellstyle))
         return matched_genre
+
+def edit_book():
+    matches, choices, book_ids=query_books_by_name()
+    print()
+
+    if not matches:
+        return  # query_books_by_name() already printed "No existing books found."
+
+    book_id_input = input("Enter the book id to edit: ")
+    try:
+        book_id = int(book_id_input)
+    except ValueError:
+        print("Invalid input. No book was edited.")
+        return
+
+    if book_id not in book_ids:
+        print("Please enter a book id from the search results. No book was edited.")
+        return
+
+    # Checks if the book is currently available and if not, warns the librarian
+    if not is_available(book_id):
+        choice=input("The book is not available at the moment. Enter if you still want to edit it (y/n): ").lower()
+        if not choice.startswith("y"):
+            print("No book was edited.")
+            return
+
+    db.cr.execute("select book_name, publication_date, genre, author_name from books where book_id=%s", (book_id, ))
+    details = list(db.cr.fetchone())
+    header=["Book Name", "Publication", "Genre", "Author Name"]
+    print(tabulate([details], headers=header, tablefmt=constants.cellstyle))
+
+    new_book_name=input("Enter the new book name or press Return to keep the old book name: ")
+    new_publication_date=input("Enter the new publication date in YYYY-MM-DD or press Return to keep the old date: ")
+    new_genre=input("Enter the new genre or press Return to keep the old genre: ")
+    new_author_name=input("Enter the author name or press Return to keep the old author name: ")
+
+    entered_details = [new_book_name, new_publication_date, new_genre, new_author_name]
+    for i in range(4):
+        if entered_details[i] != "":
+            details[i] = entered_details[i]    
+    db.cr.execute("update books set book_name=%s, publication_date=%s, genre=%s, author_name=%s where book_id=%s", (details[0], details[1], details[2], details[3], book_id))
+    db.connect.commit()
+    print("Book updated.")
+    print(tabulate([details], headers=header, tablefmt=constants.cellstyle))
 
 # Deletion of books from the database is directly difficult because records in the transaction table referencing the book_id as foreign key may exist
 def delete_book():
@@ -180,21 +241,14 @@ def delete_book():
         return
 
     # book is available i.e. is in the library and can be deleted (thus proceed to delete the book)
-    cr.execute("update books set active=0 where book_id=%s", (book_id,))
-    connect.commit()
+    db.cr.execute("select * from transactions where book_id=%s", (book_id,))
+    transactions = db.cr.fetchall()
+    if not transactions:
+        # No issue with referential integrity, since such a book doesn't exist in the transactions table, can safely hard delete from the books table
+        db.cr.execute("delete from books where book_id=%s", (book_id,))
+        db.connect.commit()
+    elif transactions:
+        # Hard delete from the books can cause issues with refferential integrity, thus do a soft delete
+        db.cr.execute("update books set active=0 where book_id=%s", (book_id,))
+        db.connect.commit()
     print("Book has been removed from the catalog.")
-
-def issued_books():
-    cr.execute("select transaction_id, book_name, member_name, issue_date, due_date from books, members, transactions where return_date is null and transactions.book_id=books.book_id and transactions.member_id=members.member_id")
-    issued_books_list=cr.fetchall()
-    return issued_books_list
-
-def due_today_books():
-    cr.execute("select transaction_id, books.book_name, members.member_id, members.member_name, transactions.issue_date from books, members, transactions where return_date is null and due_date=curdate() and transactions.member_id=members.member_id and transactions.book_id=books.book_id")
-    due_today_list=cr.fetchall()
-    return due_today_list
-
-def overdue_books():
-    cr.execute("select transaction_id, book_name, members.member_id, members.member_name, due_date, datediff(curdate(), due_date) as days_delayed from books, members, transactions where return_date is null and due_date < curdate() and transactions.member_id=members.member_id and transactions.book_id=books.book_id")
-    overdue_books_list=cr.fetchall()
-    return overdue_books_list

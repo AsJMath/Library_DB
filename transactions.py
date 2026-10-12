@@ -1,21 +1,23 @@
+### transactions.py
+
 # FILES
-from db import connect, cr
-from books import is_available, query_books_by_name, book_exists, current_borrower, issued_books
-from members import is_active_member, no_of_books_issued_to, query_by_member_name
-from utils import is_late, add_date
-from constants import max_books, loan_period, fines, cellstyle
+import db
+import books
+import members
+import utils
+import constants
 
 # MODULES
 from tabulate import tabulate
 
 def issue_book():
-    cr.execute("select 1 from books where active=1 limit 1")
-    if cr.fetchone() is None:
+    db.cr.execute("select 1 from books where active=1 limit 1")
+    if db.cr.fetchone() is None:
         print("No active books available to issue.")
         return
 
     # Allows the librarian to search for the book to issue
-    matches, choices, book_ids = query_books_by_name()
+    matches, choices, book_ids = books.query_books_by_name()
     print()
 
     if not matches:
@@ -32,12 +34,12 @@ def issue_book():
         print("Please enter a book id from the search results. No book was issued.")
         return
 
-    if not is_available(book_id):
+    if not books.is_available(book_id):
         print("This book is out of the library and cannot be issued.")
         return
 
     # book exists and is available (thus proceed)
-    matches, choices, member_ids = query_by_member_name()
+    matches, choices, member_ids = members.query_by_member_name()
     print()
 
     if not matches:
@@ -55,30 +57,30 @@ def issue_book():
         return
 
     # Checks if the member has an active membership
-    member_tier = is_active_member(member_id)
+    member_tier = members.is_active_member(member_id)
     if member_tier is None:
         print("No active membership on record. Please register or renew before issuing.")
         return
     else:
-        print(f"Member has a active {member_tier} membership and has taken {no_of_books_issued_to(member_id)} out of the permitted {max_books[member_tier]} books.")
+        print(f"Member has a active {member_tier} membership and has taken {members.no_of_books_issued_to(member_id)} out of the permitted {constants.max_books[member_tier]} books.")
 
     # If the member has an active membership, check if the member has exceeded their limit on issuing books
-    books_currently_issued = no_of_books_issued_to(member_id)
-    if books_currently_issued >= max_books[member_tier]:
-        print(f"This member has reached their {member_tier} tier limit of {max_books[member_tier]} books. Return a book before issuing another.")
+    books_currently_issued = members.no_of_books_issued_to(member_id)
+    if books_currently_issued >= constants.max_books[member_tier]:
+        print(f"This member has reached their {member_tier} tier limit of {constants.max_books[member_tier]} books. Return a book before issuing another.")
         return
 
     # Updating the transactions table for new issue
     issue_date=input("Enter the date of issuing (YYYY-MM-DD): ")
     return_date=None #gets converted to NULL
-    due_date=add_date(issue_date, loan_period[member_tier])
+    due_date=utils.add_date(issue_date, constants.loan_period[member_tier])
 
-    cr.execute("insert into transactions (book_id, member_id, issue_date, return_date, due_date) values (%s, %s, %s, %s, %s)", (book_id, member_id, issue_date, return_date, due_date))
-    connect.commit()
+    db.cr.execute("insert into transactions (book_id, member_id, issue_date, return_date, due_date) values (%s, %s, %s, %s, %s)", (book_id, member_id, issue_date, return_date, due_date))
+    db.connect.commit()
     print("Book issued.")
 
 def return_book():
-    issued_books_list=issued_books()
+    issued_books_list=books.issued_books()
     if not issued_books_list:
         print("No books are currently issued.")
         return
@@ -89,7 +91,7 @@ def return_book():
 
     headers=["Transaction ID", "Book Name", "Member Name", "Issue Date", "Due Date"]
     print("Issued books:")
-    print(tabulate(issued_books_list, headers=headers, tablefmt=cellstyle))
+    print(tabulate(issued_books_list, headers=headers, tablefmt=constants.cellstyle))
 
     transaction_id_input = input("Enter the transaction id to return: ")
     try:
@@ -103,8 +105,8 @@ def return_book():
         return
 
     # Finds the transaction where that particular book was issued and not returned
-    cr.execute("select due_date, issue_date, book_id from transactions where transaction_id=%s and return_date is null", (transaction_id,))
-    result=cr.fetchone()
+    db.cr.execute("select due_date, issue_date, book_id from transactions where transaction_id=%s and return_date is null", (transaction_id,))
+    result=db.cr.fetchone()
     if result:
         due_date=result[0].strftime("%Y-%m-%d")
         issue_date=result[1].strftime("%Y-%m-%d")
@@ -112,24 +114,24 @@ def return_book():
     # Accepting return date and rejecting impossible case of issue date being after the return date to maintain data integrity
     while True:
         return_date=input("Enter the return date (YYYY-MM-DD): ")
-        if is_late(return_date, issue_date):
+        if utils.is_late(return_date, issue_date):
             # returns a non zero value if issue date is after the return date
             print(f"Return date ({return_date}) cannot be before the issue date ({issue_date}). Try again.")
         else: # Valid return date after the issue date
             break
 
     # From the previous select statement, goes to that particular record and sets a non null return date to indicate that it has been returned
-    cr.execute("update transactions set return_date=%s where transaction_id=%s", (return_date, transaction_id))
-    connect.commit()
+    db.cr.execute("update transactions set return_date=%s where transaction_id=%s", (return_date, transaction_id))
+    db.connect.commit()
 
     # Dynamically calculates lateness of the book and issues fines
-    days_late=is_late(due_date, return_date)
+    days_late=utils.is_late(due_date, return_date)
     if days_late:
-        late_amount = days_late * fines["late"]
+        late_amount = days_late * constants.fines["late"]
         print(f"This book is {days_late} days late and Rs. {late_amount} has been charged.")
         is_late_paid=False
-        cr.execute("insert into fines (transaction_id, fine_type, amount, paid) values(%s, %s, %s, %s)", (transaction_id, 'late', late_amount, is_late_paid))
-        connect.commit()
+        db.cr.execute("insert into fines (transaction_id, fine_type, amount, paid) values(%s, %s, %s, %s)", (transaction_id, 'late', late_amount, is_late_paid))
+        db.connect.commit()
     else:
         print("This book was returned on time.")
 
@@ -137,12 +139,12 @@ def return_book():
     while True:
         is_damaged=input("Is the book damaged (y/n): ").lower()
         if is_damaged=="y":
-            damage_amount=fines["damage"]
+            damage_amount=constants.fines["damage"]
             is_damage_paid=False
 
-            cr.execute("insert into fines (transaction_id, fine_type, amount, paid) values(%s, %s, %s, %s)", (transaction_id, 'damage', damage_amount, is_damage_paid))
-            connect.commit()
-            print("Rs. 700 has been charged.")
+            db.cr.execute("insert into fines (transaction_id, fine_type, amount, paid) values(%s, %s, %s, %s)", (transaction_id, 'damage', damage_amount, is_damage_paid))
+            db.connect.commit()
+            print(f"Rs.{constants.fines["damage"]} has been charged.")
             break
         elif is_damaged=="n":
             break
@@ -150,7 +152,7 @@ def return_book():
             print("Invalid input, enter (y/n) only.")
             
 def settle_fines():
-    matches, choices, member_ids = query_by_member_name()
+    matches, choices, member_ids = members.query_by_member_name()
     print()
 
     if not matches:
@@ -168,8 +170,8 @@ def settle_fines():
         return
 
     # Finds all the pending fines for a particular member
-    cr.execute("select fine_id, fine_type, amount, book_name, return_date from transactions, fines, books where books.book_id=transactions.book_id and fines.transaction_id=transactions.transaction_id and paid=0 and transactions.member_id=%s", (member_id,))
-    pending_fines=cr.fetchall()
+    db.cr.execute("select fine_id, fine_type, amount, book_name, return_date from transactions, fines, books where books.book_id=transactions.book_id and fines.transaction_id=transactions.transaction_id and paid=0 and transactions.member_id=%s", (member_id,))
+    pending_fines=db.cr.fetchall()
 
     # Safety check to prevent tabulate function receiving a none object to tabulate
     if not pending_fines:
@@ -179,7 +181,7 @@ def settle_fines():
     # Lists all the fines for the particular member
     headers=["Fine ID", "Fine Type", "Amount", "Book Name", "Return Date"]
     print("Pending fines:")
-    print(tabulate(pending_fines, headers=headers, tablefmt=cellstyle))
+    print(tabulate(pending_fines, headers=headers, tablefmt=constants.cellstyle))
 
     # Asks the librarian to choose which of the fine to settle or 0 to settle all of the members fine
     fine_input = input("Enter the fine id for the fine you want to settle or press 0 for settling all fines: ")
@@ -190,19 +192,19 @@ def settle_fines():
         return
 
     if fine_id == 0:
-        cr.execute("update fines,transactions set fines.paid=1 where transactions.transaction_id=fines.transaction_id and transactions.member_id=%s and fines.paid=0", (member_id,))
-        connect.commit()
+        db.cr.execute("update fines, transactions set fines.paid=1 where transactions.transaction_id=fines.transaction_id and transactions.member_id=%s and fines.paid=0", (member_id,))
+        db.connect.commit()
         print("All fines settled.")
     else:
-        cr.execute("update fines,transactions set fines.paid=1 where transactions.transaction_id=fines.transaction_id and fines.fine_id=%s and transactions.member_id=%s and fines.paid=0", (fine_id, member_id))
-        connect.commit()
+        db.cr.execute("update fines,transactions set fines.paid=1 where transactions.transaction_id=fines.transaction_id and fines.fine_id=%s and transactions.member_id=%s and fines.paid=0", (fine_id, member_id))
+        db.connect.commit()
 
-        if cr.rowcount == 0:
+        if db.cr.rowcount == 0:
             print("Invalid fine ID for this member, or already paid.")
         else:
             print("Fine settled.")
             
 def pending_fines():
-        cr.execute("select fine_id, member_name, book_name, fine_type, amount from fines, transactions, members, books where paid=0 and members.member_id=transactions.member_id and transactions.transaction_id=fines.transaction_id and transactions.book_id=books.book_id")
-        pending_fines_list=cr.fetchall()
+        db.cr.execute("select fine_id, member_name, book_name, fine_type, amount from fines, transactions, members, books where paid=0 and members.member_id=transactions.member_id and transactions.transaction_id=fines.transaction_id and transactions.book_id=books.book_id")
+        pending_fines_list=db.cr.fetchall()
         return pending_fines_list # returns the result or []
