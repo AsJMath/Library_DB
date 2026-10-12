@@ -1,7 +1,7 @@
 ### main.py
 
 # FILES
-import db # import db automatically runs the db file and db.create database is called
+import db # import db automatically runs the db file and db.create_database() is called
 import books
 import members
 import constants
@@ -13,7 +13,8 @@ import mailer # for draft_group_email function
 # MODULES
 from tabulate import tabulate
 
-# Refreshes the presence [!!] flags 
+# Refreshes the presence [!!] flags
+# Refreshed on startup and whenever actions that change the data to either of books or members are executed via the CLI
 def refresh_presence_flags():
     db.cr.execute("select 1 from books limit 1")
     books_present = db.cr.fetchone() is not None
@@ -22,6 +23,8 @@ def refresh_presence_flags():
     return books_present, members_present
 
 is_books_present, is_members_present = refresh_presence_flags()
+
+# Prints the intro message
 
 utils.fancy_print(constants.intro_message)
 utils.buffer()
