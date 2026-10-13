@@ -11,6 +11,7 @@ import textwrap
 
 plt.rcParams["toolbar"]="None"
 
+# HELPER FUNCTIONS
 def blank(x, y):
     return ""
 
@@ -58,6 +59,8 @@ def plot_top_ten(labels, values, xlabel, ylabel, title):
     plt.tight_layout()
     plt.show(block=True)
     plt.close("all")
+
+# USER FUNCTIONS
 
 # Doesn't consider if the book is active or not; relies on historical data and can be useful to the librarian to find out of the book should be reactivated
 def top_ten_books():

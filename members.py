@@ -83,6 +83,48 @@ def delete_member():
     db.connect.commit()
     print("Member has been deleted.")
 
+def edit_member():
+    matches, choices, member_ids = query_by_member_name()
+    print()
+
+    if not matches:
+        return  # query_by_member_name() already printed "No such members found."
+
+    member_id_input = input("Enter the member id to edit: ")
+    try:
+        member_id = int(member_id_input)
+    except ValueError:
+        print("Invalid input. No member was edited.")
+        return
+
+    if member_id not in member_ids:
+        print("Please enter a member id from the search results. No member was edited.")
+        return
+
+    # Fetches the current member details
+    db.cr.execute("select member_name, email_address from members where member_id=%s",(member_id,))
+    details = list(db.cr.fetchone())
+
+    header = ["Member Name", "Email Address"]
+    print(tabulate([details], headers=header, tablefmt=constants.cellstyle))
+
+    # Accepts new details, allowing the old values to be retained
+    new_member_name = input("Enter the new member name or press Enter to keep the old name: ")
+    new_email_address = input("Enter the new email address or press Enter to keep the old email: ")
+
+    entered_details = [new_member_name, new_email_address]
+
+    for i in range(2):
+        if entered_details[i] != "":
+            details[i] = entered_details[i]
+
+    # Updates the database
+    db.cr.execute("update members set member_name=%s, email_address=%s where member_id=%s",(details[0], details[1], member_id))
+    db.connect.commit()
+
+    print("Member updated.")
+    print(tabulate([details], headers=header, tablefmt=constants.cellstyle))
+
 # Allows to pay for a membership, extending an old one or starting a new one afresh
 def pay_membership():
     matches, choices, member_ids = query_by_member_name()

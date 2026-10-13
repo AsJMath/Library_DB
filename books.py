@@ -99,9 +99,13 @@ def add_book():
     genre=input("Enter the genre: ")
     author_name=input("Enter the name of the author: ")
 
-    db.cr.execute("insert into books (book_name, publication_date, genre, author_name, active) values (%s, %s, %s, %s, %s)", (book_name, publication_date, genre, author_name, 1))
-    db.connect.commit()
-    print("New book added.")
+    try:
+        db.cr.execute("insert into books (book_name, publication_date, genre, author_name, active) values (%s, %s, %s, %s, %s)", (book_name, publication_date, genre, author_name, 1))
+        db.connect.commit()
+        print("New book added.")
+    except:
+        print("Invalid entries. Try again.")
+        return
 
 def query_books_by_name(active_only=True, query=None):
     if query is None:
@@ -207,10 +211,14 @@ def edit_book():
     for i in range(4):
         if entered_details[i] != "":
             details[i] = entered_details[i]    
-    db.cr.execute("update books set book_name=%s, publication_date=%s, genre=%s, author_name=%s where book_id=%s", (details[0], details[1], details[2], details[3], book_id))
-    db.connect.commit()
-    print("Book updated.")
-    print(tabulate([details], headers=header, tablefmt=constants.cellstyle))
+    try:
+        db.cr.execute("update books set book_name=%s, publication_date=%s, genre=%s, author_name=%s where book_id=%s", (details[0], details[1], details[2], details[3], book_id))
+        db.connect.commit()
+        print("Book updated.")
+        print(tabulate([details], headers=header, tablefmt=constants.cellstyle))
+    except:
+        print("Invalid entries. Try again.")
+        return
 
 # Deletion of books from the database is directly difficult because records in the transaction table referencing the book_id as foreign key may exist
 def delete_book():

@@ -10,6 +10,13 @@ import constants
 # MODULES
 from tabulate import tabulate
 
+# HELPER FUNCTIONS
+def pending_fines():
+        db.cr.execute("select fine_id, member_name, book_name, fine_type, amount from fines, transactions, members, books where paid=0 and members.member_id=transactions.member_id and transactions.transaction_id=fines.transaction_id and transactions.book_id=books.book_id")
+        pending_fines_list=db.cr.fetchall()
+        return pending_fines_list # returns the result or []
+
+# USER FUNCTIONS
 def issue_book():
     db.cr.execute("select 1 from books where active=1 limit 1")
     if db.cr.fetchone() is None:
@@ -70,8 +77,13 @@ def issue_book():
 
     # Updating the transactions table for new issue
     issue_date=input("Enter the date of issuing (YYYY-MM-DD): ")
-    return_date=None #gets converted to NULL
-    due_date=utils.add_date(issue_date, constants.loan_period[member_tier])
+    return_date=None # gets converted to NULL
+
+    try:
+        due_date=utils.add_date(issue_date, constants.loan_period[member_tier])
+    except:
+        print("Invalid date format. No book has been issued. Try again.")
+        return
 
     db.cr.execute("insert into transactions (book_id, member_id, issue_date, return_date, due_date) values (%s, %s, %s, %s, %s)", (book_id, member_id, issue_date, return_date, due_date))
     db.connect.commit()
@@ -112,11 +124,14 @@ def return_book():
     # Accepting return date and rejecting impossible case of issue date being after the return date to maintain data integrity
     while True:
         return_date=input("Enter the return date (YYYY-MM-DD): ")
-        if utils.is_late(return_date, issue_date):
-            # returns a non zero value if issue date is after the return date
-            print(f"Return date ({return_date}) cannot be before the issue date ({issue_date}). Try again.")
-        else: # Valid return date after the issue date
-            break
+        try:
+            if utils.is_late(return_date, issue_date):
+                # returns a non zero value if issue date is after the return date
+                print(f"Return date ({return_date}) cannot be before the issue date ({issue_date}). Try again.")
+            else: # Valid return date after the issue date
+                break
+        except:
+            print("Invalid date format. No book has been returned. Try again.")
 
     # From the previous select statement, goes to that particular record and sets a non null return date to indicate that it has been returned
     db.cr.execute("update transactions set return_date=%s where transaction_id=%s", (return_date, transaction_id))
@@ -201,8 +216,3 @@ def settle_fines():
             print("Invalid fine ID for this member, or already paid.")
         else:
             print("Fine settled.")
-            
-def pending_fines():
-        db.cr.execute("select fine_id, member_name, book_name, fine_type, amount from fines, transactions, members, books where paid=0 and members.member_id=transactions.member_id and transactions.transaction_id=fines.transaction_id and transactions.book_id=books.book_id")
-        pending_fines_list=db.cr.fetchall()
-        return pending_fines_list # returns the result or []

@@ -17,7 +17,7 @@ https://www.example.com:443/library/books?genre=fiction&sort=title#results
 3. Port [:443] - Directs data to the correct application
 4. Path [/library/books] - A specifice source or path within that webpage
 5. Query String [?genre=fiction&sort=title] - Starts with a ?; extra constraints and parameters passed to the server, formatted as key=value pairs seperated by &
-6. Fragment [#result] - Points to a specific section within the page (handles within the client application itself and is never sent to the server); entire result frmo 1-5 is sent to the server and the client application selectively picks the required fragment
+6. Fragment [#result] - Points to a specific section within the page (handles within the client application itself and the request for a fragmentis never sent to the server); entire result from part 1. to 5. is sent to the server and the client application selectively picks the required fragment
 """
 
 # COROLLARY TO mailto: URL
@@ -49,7 +49,7 @@ def send_mail(to, subject, body, cc=None, bcc=None):
 
     # webbrowser.open() is not for webpages alone; it merely hands a URL to the OS and lets the OS decide what to do with it. 
     # Thus, the opening of a mail application when executing a mailto: URL is handled by the OS; webbrowser.open() hands that link over to the OS
-    # The OS receives the URL and matches the scheme (https:// or mailto:) against its internal registery and then decides what to do (open the default web browser or the mail application)
+    # The OS receives the URL and matches the scheme (https:// or mailto:) against its own internal registery and then decides what to do (open the default web browser or the mail application respectively)
     webbrowser.open(mailto_url)
 
 # case must either be 'due today' or 'overdue'
@@ -80,6 +80,7 @@ def draft_group_emails(rows, subject_line, case):
 
     # Since this function only reads row[1] through row[3], the extra trailing column(s) on either side are simply ignored, thus no unpacking mismatch.
 
+    # Groups the members to avoid sending repeat mails; using a dictionary with key as member id and values as a dictionary of the member name and the books in question (either due today or overdue)
     grouped_members={}
     for row in rows:
         book_name, member_id, member_name = row[1], row[2], row[3]

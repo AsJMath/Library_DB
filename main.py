@@ -30,21 +30,22 @@ requirements = {
     2: (True, False),
     3: (True, False),
     5: (False, True),
-    6: (True, True),
+    6: (False, True),
     7: (True, True),
     8: (True, True),
-    9: (False, True),
-    10: (True, False),
+    9: (True, True),
+    10: (False, True),
     11: (True, False),
-    12: (False, True),
+    12: (True, False),
     13: (False, True),
-    14: (True, True),
+    14: (False, True),
     15: (True, True),
     16: (True, True),
     17: (True, True),
-    21: (True, False),
-    22: (False, True),
-    24: (True, False),
+    18: (True, True),
+    22: (True, False),
+    23: (False, True),
+    25: (True, False),
 }
 
 # Prints the intro message
@@ -72,36 +73,37 @@ $ Actions
 2. Edit books
 3. Delete books
 4. Add members
-5. Delete members
-6. Issue book
-7. Return book
-8. Settle Fines
-9. Pay Membership
+5. Edit members
+6. Delete members
+7. Issue book
+8. Return book
+9. Settle Fines
+10. Pay Membership
 
 $ Information
-10. Generic Search - Search books by book, author or genre
-11. Book Info - Information about the book, current borrower and its transaction history
-12. Member Info - Information about the member, membership status and their transaction history
-13. Membership Info - Information about all members and their membership status
-14. Pending Fines{pending_fines_indicator} - List of all pending fines
-15. Issued Books{issued_books_indicator} - List of all books out of the library
-16. Due Today{due_today_books_indicator} - List of all book due today
-17. Overdue Books{overdue_books_indicator} - List all books overdue
-18. Tier Info - List all the tiers and their benefits
-19. Books - View the entire books list
-20. Members - View the entire members list
+11. Generic Search - Search books by book, author or genre
+12. Book Info - Information about the book, current borrower and its transaction history
+13. Member Info - Information about the member, membership status and their transaction history
+14. Membership Info - Information about all members and their membership status
+15. Pending Fines{pending_fines_indicator} - List of all pending fines
+16. Issued Books{issued_books_indicator} - List of all books out of the library
+17. Due Today{due_today_books_indicator} - List of all book due today
+18. Overdue Books{overdue_books_indicator} - List all books overdue
+19. Tier Info - List all the tiers and their benefits
+20. Books - View the entire books list
+21. Members - View the entire members list
 
 $ Charts
-21. Top 10 Books - Top 10 list of most issued books
-22. Top 10 Members - Top 10 list of members who issue books most
-23. Membership Chart - See a pie chart of what memberships members have
-24. Genre Chart - See a pie chart of the genre's available
-25. Revenue Source Chart - See a pie chart of the revenue the library generates from each source
+22. Top 10 Books - Top 10 list of most issued books
+23. Top 10 Members - Top 10 list of members who issue books most
+24. Membership Chart - See a pie chart of what memberships members have
+25. Genre Chart - See a pie chart of the genre's available
+26. Revenue Source Chart - See a pie chart of the revenue the library generates from each source
 
 $ Other
-26. Custom Query - Enter your own custom SELECT query
-27. See Database Schema
-28. Clear all data
+27. Custom Query - Enter your own custom SELECT query
+28. See Database Schema
+29. Clear all data
 Type 'exit' to quit the program.
 """)
 
@@ -142,7 +144,7 @@ Type 'exit' to quit the program.
         if blocked:
             pass
 
-        elif num_choice not in range(1,29):
+        elif num_choice not in range(1,30):
             utils.fancy_print("Try again with a number from 1 to 28.")
             utils.buffer()
 
@@ -162,22 +164,26 @@ Type 'exit' to quit the program.
             is_books_present, is_members_present = refresh_presence_flags()
 
         elif num_choice==5:
-            members.delete_member()
+            members.edit_member()
             is_books_present, is_members_present = refresh_presence_flags()
 
         elif num_choice==6:
-            transactions.issue_book()
+            members.delete_member()
+            is_books_present, is_members_present = refresh_presence_flags()
 
         elif num_choice==7:
-            transactions.return_book()
+            transactions.issue_book()
 
         elif num_choice==8:
-            transactions.settle_fines()
+            transactions.return_book()
 
         elif num_choice==9:
-            members.pay_membership()
+            transactions.settle_fines()
 
         elif num_choice==10:
+            members.pay_membership()
+
+        elif num_choice==11:
             # while loop handles stray values for the method input
             while True:
                 method=input("""
@@ -206,7 +212,7 @@ Enter the method of search: """)
                     graphing.genre_chart(target_genre)
 
         # Book Info
-        elif num_choice==11:
+        elif num_choice==12:
             matches, choices, book_ids = books.query_books_by_name(active_only=False) # Gives the option to view the books even if they are inactive
             print()
 
@@ -259,7 +265,7 @@ Due: {result[2]}""")
                 print(tabulate(transaction_history, headers=headers, tablefmt=constants.cellstyle))
 
         # Member Info
-        elif num_choice==12:
+        elif num_choice==13:
             matches, choices, member_ids = members.query_by_member_name()
             print()
 
@@ -330,7 +336,7 @@ Due: {result[2]}""")
                     print(tabulate(fine_history, headers=header, tablefmt=constants.cellstyle))
 
         # Membership Info
-        elif num_choice==13:
+        elif num_choice==14:
             active_membership_info = members.active_members() # returns list of all (member_id, member_name, tier, expiry_date)
             active_member_ids=[]
             if not active_membership_info:
@@ -365,7 +371,7 @@ Due: {result[2]}""")
                 graphing.membership_chart()
 
         # Pending Fines
-        elif num_choice==14:
+        elif num_choice==15:
             # condition paid=0 indicates unpaid fines
             if not pending_fines_list:
                 print("No fines are currently pending.")
@@ -375,7 +381,7 @@ Due: {result[2]}""")
                 print(tabulate(pending_fines_list, headers=headers, tablefmt=constants.cellstyle))
 
         # Issued Books - All issued books including overdue books
-        elif num_choice==15:
+        elif num_choice==16:
             if not issued_books_list:
                 print("No books are currently issued.")
             else:
@@ -384,7 +390,7 @@ Due: {result[2]}""")
                 print(tabulate(issued_books_list, headers=headers, tablefmt=constants.cellstyle))
 
         # Due Today
-        elif num_choice==16:
+        elif num_choice==17:
             if not due_today_list:
                 print("No books due today.")
             else: # Books due today exist in the database
@@ -400,7 +406,7 @@ Due: {result[2]}""")
                     mailer.draft_group_emails(due_today_list, "Books Due Today", case="due today")
 
         # Overdue Books
-        elif num_choice==17:
+        elif num_choice==18:
             if not overdue_books_list:
                 print("No books are currently overdue.")
             else:
@@ -416,12 +422,12 @@ Due: {result[2]}""")
                     mailer.draft_group_emails(overdue_books_list, "Overdue Books Notice", case="overdue")
 
         # Tier Information - Tabulated data comparing the tiers
-        elif num_choice==18:
+        elif num_choice==19:
             headers = ["Tier", "Price (Rs.)", "Maximum Books", "Loan Period (days)"]
             print(tabulate(constants.tier_info, headers=headers, tablefmt=constants.cellstyle))
 
         # All active books
-        elif num_choice==19:
+        elif num_choice==20:
             db.cr.execute("select book_id, book_name, publication_date, genre, author_name from books where active=1")
             result=db.cr.fetchall()
             if result:
@@ -431,7 +437,7 @@ Due: {result[2]}""")
                 print("No books in the current catalog. Add new books to use this functionality.")
 
         # All members
-        elif num_choice==20:
+        elif num_choice==21:
             db.cr.execute("select * from members")
             result=db.cr.fetchall()
             if result:
@@ -440,23 +446,23 @@ Due: {result[2]}""")
             else:
                 print("No members in the library currently. Add new members to use this functionality.")
 
-        elif num_choice==21:
+        elif num_choice==22:
             graphing.top_ten_books()
 
-        elif num_choice==22:
+        elif num_choice==23:
             graphing.top_ten_members()
 
-        elif num_choice==23:
+        elif num_choice==24:
             graphing.membership_chart()
 
-        elif num_choice==24:
+        elif num_choice==25:
             graphing.genre_chart()
 
-        elif num_choice==25:
+        elif num_choice==26:
             graphing.revenue_source_chart()
 
         # Custom Query
-        elif num_choice==26:
+        elif num_choice==27:
             query=input("Enter your custom SELECT query: ")
             if query.strip().lower().startswith("select"):
                 try:
@@ -475,7 +481,7 @@ Due: {result[2]}""")
                 print("Only SELECT statements are allowed for safety.")
 
         # Database Schema
-        elif num_choice==27:
+        elif num_choice==28:
             db.cr.execute("show tables")
             tables = db.cr.fetchall()
 
@@ -489,7 +495,7 @@ Due: {result[2]}""")
                 print(tabulate(columns, headers=["Field", "Type", "Null", "Key", "Default", "Extra"], tablefmt=constants.cellstyle, missingval="NULL"))
 
         # Clear all data
-        elif num_choice==28:
+        elif num_choice==29:
             db.wipe_data()
             # No need to update the flags since the wipe_data() function exits the program. Restarting refreshes the flags again outisde the loop.
 
