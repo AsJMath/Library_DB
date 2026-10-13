@@ -42,13 +42,11 @@ intro_message="""
 *****WELCOME TO THE LIBRARY MANAGEMENT SYSTEM*****
 ************************************************** 
 
-Press Ctrl+C any time during the program to quit.
-"""
+Press Ctrl+C any time during the program to quit."""
 
 indicator=" [!!]"
 
 credits_message="""
 Made By: Ashwin Joshi Mathew and Sharvil Rajan
 Softwares: VSCode, Python, MySQL
-Modules: matplotlib.pyplot, rapidfuzz, textwrap, webbrowser, mysqlconnector, tabulate, datetime, urllib.parse, sys, time
-"""
+Modules: matplotlib.pyplot, rapidfuzz, textwrap, webbrowser, mysqlconnector, tabulate, datetime, urllib.parse, sys, time"""

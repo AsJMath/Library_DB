@@ -94,7 +94,7 @@ def add_book():
                     db.connect.commit()
                     print("Book restored to the active catalog.")
                     return
-
+    print("Adding as new book...")
     publication_date=input("Enter the date of publication in YYYY-MM-DD: ")
     genre=input("Enter the genre: ")
     author_name=input("Enter the name of the author: ")

@@ -1,7 +1,8 @@
 ### main.py
 
 # FILES
-import db # import db automatically runs the db file and db.create_database() is called
+# All import statements run the respective files they import. All the files below consist of function definitions and no function calls except db.py, which calls the db.create_database() function, creating a database if it doesn't exist.
+import db
 import books
 import members
 import constants
@@ -24,8 +25,29 @@ def refresh_presence_flags():
 
 is_books_present, is_members_present = refresh_presence_flags()
 
-# Prints the intro message
+# Which options need books and/or members to exist: option number: (needs_books?, needs_members?)
+requirements = {
+    2: (True, False),
+    3: (True, False),
+    5: (False, True),
+    6: (True, True),
+    7: (True, True),
+    8: (True, True),
+    9: (False, True),
+    10: (True, False),
+    11: (True, False),
+    12: (False, True),
+    13: (False, True),
+    14: (True, True),
+    15: (True, True),
+    16: (True, True),
+    17: (True, True),
+    21: (True, False),
+    22: (False, True),
+    24: (True, False),
+}
 
+# Prints the intro message
 utils.fancy_print(constants.intro_message)
 utils.buffer()
 run=True
@@ -77,36 +99,61 @@ $ Charts
 25. Revenue Source Chart - See a pie chart of the revenue the library generates from each source
 
 $ Other
-26. Exit
-27. Custom Query - Enter your own custom SELECT query
-28. See Database Schema
-29. Clear all data
+26. Custom Query - Enter your own custom SELECT query
+27. See Database Schema
+28. Clear all data
+Type 'exit' to quit the program.
 """)
 
-        num_choice=input("Enter the number: ")
+        num_choice=input("Type your choice: ").strip().lower()
         if num_choice=="who made this":
             utils.fancy_print(constants.credits_message)
             utils.buffer()
             continue
+        elif num_choice=="exit":
+            run=False
+            db.quit()
+            break
 
         # Handles stray values that are not integers or that are not within the valid ranges
         try:
             num_choice=int(num_choice)
         except ValueError:
             utils.fancy_print("Try Again!")
+            utils.buffer()
             continue # forces the next iteration of the loop
 
-        if num_choice not in range(1,30):
-            utils.fancy_print("Try again with a number from 1 to 29.")
+        blocked=False
+        if num_choice in requirements:
+            needs_books, needs_members = requirements[num_choice]
+            missing_books = needs_books and not is_books_present
+            missing_members = needs_members and not is_members_present
+
+            if missing_books and missing_members:
+                utils.fancy_print("This function cannot be accessed without adding books and members.")
+                blocked = True
+            elif missing_books:
+                utils.fancy_print("This function cannot be accessed without adding books.")
+                blocked = True
+            elif missing_members:
+                utils.fancy_print("This function cannot be accessed without adding members.")
+                blocked = True        
+        
+        if blocked:
+            pass
+
+        elif num_choice not in range(1,29):
+            utils.fancy_print("Try again with a number from 1 to 28.")
+            utils.buffer()
 
         elif num_choice==1:
             books.add_book()
             is_books_present, is_members_present = refresh_presence_flags()
 
-        elif num_choice==2 and is_books_present:
+        elif num_choice==2:
             books.edit_book()
 
-        elif num_choice==3 and is_books_present:
+        elif num_choice==3:
             books.delete_book()
             is_books_present, is_members_present = refresh_presence_flags()
 
@@ -114,23 +161,23 @@ $ Other
             members.add_member()
             is_books_present, is_members_present = refresh_presence_flags()
 
-        elif num_choice==5 and is_members_present:
+        elif num_choice==5:
             members.delete_member()
             is_books_present, is_members_present = refresh_presence_flags()
 
-        elif num_choice==6 and is_books_present and is_members_present:
+        elif num_choice==6:
             transactions.issue_book()
 
-        elif num_choice==7 and is_books_present and is_members_present:
+        elif num_choice==7:
             transactions.return_book()
 
-        elif num_choice==8 and is_books_present and is_members_present:
+        elif num_choice==8:
             transactions.settle_fines()
 
-        elif num_choice==9 and is_members_present:
+        elif num_choice==9:
             members.pay_membership()
 
-        elif num_choice==10 and is_books_present:
+        elif num_choice==10:
             # while loop handles stray values for the method input
             while True:
                 method=input("""
@@ -159,7 +206,7 @@ Enter the method of search: """)
                     graphing.genre_chart(target_genre)
 
         # Book Info
-        elif num_choice==11 and is_books_present:
+        elif num_choice==11:
             matches, choices, book_ids = books.query_books_by_name(active_only=False) # Gives the option to view the books even if they are inactive
             print()
 
@@ -182,7 +229,7 @@ Enter the method of search: """)
             db.cr.execute("select book_name from books where book_id=%s",(book_id,))
             name=db.cr.fetchone()[0]
 
-            # True by default but becomes optional if the book is found to be deleted
+            # True by default but becomes optional if the book is found to be deleted. Thus, exits the loop and forces the next iteration after executing code below the loop.
             show_info=True
             active=books.book_exists(book_id)
             if not active:
@@ -212,12 +259,12 @@ Due: {result[2]}""")
                 print(tabulate(transaction_history, headers=headers, tablefmt=constants.cellstyle))
 
         # Member Info
-        elif num_choice==12 and is_members_present:
+        elif num_choice==12:
             matches, choices, member_ids = members.query_by_member_name()
             print()
 
             if not matches:
-                # Two cases for no matches, both handled with print statements within query_books_by_name
+                # Two cases for no matches, both handled with print statements within query_books_by_name. Thus, exits the loop and forces the next iteration after executing code below the loop.
                 continue
 
             member_id_input = input("Enter the member id to view: ")
@@ -283,8 +330,8 @@ Due: {result[2]}""")
                     print(tabulate(fine_history, headers=header, tablefmt=constants.cellstyle))
 
         # Membership Info
-        elif num_choice==13 and is_members_present:
-            active_membership_info = members.active_members() # returns list of all (member_id, tier, expiry_date)
+        elif num_choice==13:
+            active_membership_info = members.active_members() # returns list of all (member_id, member_name, tier, expiry_date)
             active_member_ids=[]
             if not active_membership_info:
                 print("No members currently have an active membership.")
@@ -318,7 +365,7 @@ Due: {result[2]}""")
                 graphing.membership_chart()
 
         # Pending Fines
-        elif num_choice==14 and is_members_present and is_books_present:
+        elif num_choice==14:
             # condition paid=0 indicates unpaid fines
             if not pending_fines_list:
                 print("No fines are currently pending.")
@@ -328,7 +375,7 @@ Due: {result[2]}""")
                 print(tabulate(pending_fines_list, headers=headers, tablefmt=constants.cellstyle))
 
         # Issued Books - All issued books including overdue books
-        elif num_choice==15 and is_books_present and is_members_present:
+        elif num_choice==15:
             if not issued_books_list:
                 print("No books are currently issued.")
             else:
@@ -337,7 +384,7 @@ Due: {result[2]}""")
                 print(tabulate(issued_books_list, headers=headers, tablefmt=constants.cellstyle))
 
         # Due Today
-        elif num_choice==16 and is_books_present and is_members_present:
+        elif num_choice==16:
             if not due_today_list:
                 print("No books due today.")
             else: # Books due today exist in the database
@@ -353,7 +400,7 @@ Due: {result[2]}""")
                     mailer.draft_group_emails(due_today_list, "Books Due Today", case="due today")
 
         # Overdue Books
-        elif num_choice==17 and is_books_present and is_members_present:
+        elif num_choice==17:
             if not overdue_books_list:
                 print("No books are currently overdue.")
             else:
@@ -374,7 +421,7 @@ Due: {result[2]}""")
             print(tabulate(constants.tier_info, headers=headers, tablefmt=constants.cellstyle))
 
         # All active books
-        elif num_choice==19 and is_books_present:
+        elif num_choice==19:
             db.cr.execute("select book_id, book_name, publication_date, genre, author_name from books where active=1")
             result=db.cr.fetchall()
             if result:
@@ -384,7 +431,7 @@ Due: {result[2]}""")
                 print("No books in the current catalog. Add new books to use this functionality.")
 
         # All members
-        elif num_choice==20 and is_members_present:
+        elif num_choice==20:
             db.cr.execute("select * from members")
             result=db.cr.fetchall()
             if result:
@@ -393,75 +440,61 @@ Due: {result[2]}""")
             else:
                 print("No members in the library currently. Add new members to use this functionality.")
 
-        elif num_choice==21 and is_books_present:
+        elif num_choice==21:
             graphing.top_ten_books()
 
-        elif num_choice==22 and is_members_present:
+        elif num_choice==22:
             graphing.top_ten_members()
 
         elif num_choice==23:
             graphing.membership_chart()
 
-        elif num_choice==24 and is_books_present:
+        elif num_choice==24:
             graphing.genre_chart()
 
         elif num_choice==25:
             graphing.revenue_source_chart()
 
-        # Exits program closes the cursor, connection and breaks the loop
-        elif num_choice==26:
-            run=False
-            db.quit()
-            break
-
         # Custom Query
-        elif num_choice==27:
+        elif num_choice==26:
             query=input("Enter your custom SELECT query: ")
             if query.strip().lower().startswith("select"):
                 try:
                     db.cr.execute(query)
                     rows = db.cr.fetchall()
-                    for record in rows: # row is a tuple and str(item) for each item in that tuple automatically converts NULL to None and datetime objects to readable strings
-                        formatted_values=[]
-                        for item in record:
-                            formatted_values.append(str(item))
-                        line=" | ".join(formatted_values)
-                        print(line)
+                    if rows:
+                        headers=[]
+                        for col in db.cr.description:
+                            headers.append(col[0])
+                        print(tabulate(rows, headers=headers, tablefmt=constants.cellstyle, missingval="NULL"))
+                    else:
+                        print("The query returned no rows.")
                 except Exception as e:
                     print(e)
             else:
                 print("Only SELECT statements are allowed for safety.")
 
         # Database Schema
-        elif num_choice==28:
+        elif num_choice==27:
             db.cr.execute("show tables")
             tables = db.cr.fetchall()
 
             for table in tables:
+                utils.buffer()
                 table_name = table[0]
                 print()
                 print(f"--- {table_name} ---")
                 db.cr.execute(f"desc {table_name}")
                 columns = db.cr.fetchall()
-                for col in columns:
-                    print(f" {col[0]} ({col[1]})")
+                print(tabulate(columns, headers=["Field", "Type", "Null", "Key", "Default", "Extra"], tablefmt=constants.cellstyle, missingval="NULL"))
 
         # Clear all data
-        elif num_choice==29:
+        elif num_choice==28:
             db.wipe_data()
-
-        if not is_books_present and is_members_present:
-            print("\nSome functions cannot be accessed without adding books.")
-
-        if not is_members_present and is_books_present:
-            print("\nSome functions cannot be accessed without adding members.")
-
-        if not is_members_present and not is_books_present:
-            print("\nSome functions cannot be accessed without adding books and members.")
+            # No need to update the flags since the wipe_data() function exits the program. Restarting refreshes the flags again outisde the loop.
 
         # A break before the loop continues to ensure readability in the CLI
-        if num_choice != 26:
-            utils.buffer()
+        utils.buffer()
 
 except KeyboardInterrupt:
     utils.fancy_print("\nKeyboard Interrupt detected.")

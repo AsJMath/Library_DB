@@ -19,7 +19,6 @@ def issue_book():
     # Allows the librarian to search for the book to issue
     matches, choices, book_ids = books.query_books_by_name()
     print()
-
     if not matches:
         return  # query_books_by_name() already printed "No existing books found."
 
@@ -29,11 +28,11 @@ def issue_book():
     except ValueError:
         print("Invalid input. No book was issued.")
         return
-
+    # Invalid book from outisde the list is entered.
     if book_id not in book_ids:
         print("Please enter a book id from the search results. No book was issued.")
         return
-
+    # A book out of the library is chosen from the search query.
     if not books.is_available(book_id):
         print("This book is out of the library and cannot be issued.")
         return
@@ -41,7 +40,6 @@ def issue_book():
     # book exists and is available (thus proceed)
     matches, choices, member_ids = members.query_by_member_name()
     print()
-
     if not matches:
         return  # query_by_member_name() already printed "No such members found."
 
@@ -144,7 +142,7 @@ def return_book():
 
             db.cr.execute("insert into fines (transaction_id, fine_type, amount, paid) values(%s, %s, %s, %s)", (transaction_id, 'damage', damage_amount, is_damage_paid))
             db.connect.commit()
-            print(f"Rs.{constants.fines["damage"]} has been charged.")
+            print(f"Rs.{damage_amount} has been charged.")
             break
         elif is_damaged=="n":
             break
